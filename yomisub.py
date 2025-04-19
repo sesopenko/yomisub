@@ -32,12 +32,46 @@ class SubtitleApp(Gtk.Window):
 
         self.file_chooser.connect("file-set", self.on_file_chosen)
 
+        # --- Model selection UI ---
+        frame = Gtk.Frame(label="Model Selection")
+        model_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        frame.add(model_box)
+        vbox.pack_start(frame, True, True, 0)
+
+        self.model_buttons = {}
+
+        models = {
+            "tiny": "tiny (1 GB)",
+            "base": "base (1.5 GB)",
+            "small": "small (2.5 GB)",
+            "medium": "medium (5.5 GB)",
+            "large-v2": "large-v2 (12 GB)"
+        }
+
+        first_button = None
+
+        for key, label in models.items():
+            btn = Gtk.RadioButton.new_with_label_from_widget(first_button, label)
+            if first_button is None:
+                first_button = btn  # set first radio group
+            model_box.pack_start(btn, True, True, 0)
+            self.model_buttons[key] = btn
+
+        # Set default selection
+        self.model_buttons["medium"].set_active(True)
+
         self.button = Gtk.Button(label="Generate Subtitles")
         self.button.connect("clicked", self.on_generate_clicked)
         vbox.pack_start(self.button, True, True, 0)
 
         self.status_label = Gtk.Label(label="")
         vbox.pack_start(self.status_label, True, True, 0)
+
+    def get_selected_model(self):
+        for model, btn in self.model_buttons.items():
+            if btn.get_active():
+                return model
+        return "medium"  # fallback
 
     def on_file_chosen(self, widget):
         filepath = self.file_chooser.get_filename()
@@ -133,15 +167,20 @@ class SubtitleApp(Gtk.Window):
 
             GLib.idle_add(self.status_label.set_text, "Transcribing with Whisper...")
 
-            model = whisper.load_model("medium")
+            model_name = self.get_selected_model()
+            model = whisper.load_model(model_name)
+
             result = model.transcribe(str(audio_path), language=lang_code)
 
             GLib.idle_add(self.status_label.set_text, "Generating subtitles...")
 
+            max_duration = 6.0  # max subtitle duration to prevent huge blocks
+            padding = 0.5
             subtitles = []
             for i, segment in enumerate(result['segments']):
                 start = timedelta(seconds=segment['start'])
-                end = timedelta(seconds=segment['end'])
+                end_time = min(segment['end'] + padding, segment['start'] + max_duration)
+                end = timedelta(seconds=end_time)
                 content = segment['text']
                 subtitles.append(srt.Subtitle(index=i + 1, start=start, end=end, content=content))
 
