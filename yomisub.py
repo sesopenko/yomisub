@@ -11,6 +11,7 @@ from pathlib import Path
 import subprocess
 import json
 import pycountry
+import threading
 
 class SubtitleApp(Gtk.Window):
     def __init__(self):
@@ -94,57 +95,49 @@ class SubtitleApp(Gtk.Window):
 
         self.status_label.set_text("Processing...")
 
+        def run_subtitle_job():
+            self._run_subtitle_generation(filepath)
+
+        thread = threading.Thread(target=run_subtitle_job)
+        thread.start()
+    def _run_subtitle_generation(self, filepath):
+        GObject = Gtk.GObject if hasattr(Gtk, 'GObject') else gi.repository.GObject
+        from gi.repository import GLib
+
         try:
-            # Use ~/.local/share/yomisub as working directory
+            track_index = self.audio_track_combo.get_active()
+            track_label = self.audio_track_combo.get_active_text()
+            lang_code = "und"
+            if track_label and "(" in track_label:
+                lang_code = track_label.split("(")[-1].replace(")", "").strip()
+
+            lang_code = normalize_lang_code(lang_code)
+
+            if lang_code == "und":
+                GLib.idle_add(self._show_error_dialog, "Could not determine the language of the selected audio track.")
+                return
+
             app_dir = Path.home() / ".local" / "share" / "yomisub"
             app_dir.mkdir(parents=True, exist_ok=True)
 
             audio_path = app_dir / "temp_audio.wav"
-            self.status_label.set_text("Extracting audio...")
-            track_index = self.audio_track_combo.get_active()
-            if track_index < 0:
-                self.status_label.set_text("Please select an audio track.")
-                return
 
-            self.status_label.set_text("Extracting audio...")
+            # Update label on main thread
+            GLib.idle_add(self.status_label.set_text, "Extracting audio...")
 
-            # Use ffmpeg to extract the specific audio track
             subprocess.run([
                 "ffmpeg", "-y", "-i", filepath,
                 "-map", f"0:a:{track_index}", "-acodec", "pcm_s16le",
                 str(audio_path)
-            ], stderr=subprocess.STDOUT, stdout=None, check=True)
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
-            # Get language code from selected label
-            track_label = self.audio_track_combo.get_active_text()
-            lang_code = "und"  # fallback if not found
+            GLib.idle_add(self.status_label.set_text, "Transcribing with Whisper...")
 
-
-            if track_label and "(" in track_label:
-                lang_code = track_label.split("(")[-1].replace(")", "").strip()
-            if lang_code == "und":
-                dialog = Gtk.MessageDialog(
-                    transient_for=self,
-                    flags=0,
-                    message_type=Gtk.MessageType.WARNING,
-                    buttons=Gtk.ButtonsType.OK,
-                    text="Could not determine the language of the selected audio track.",
-                )
-                dialog.format_secondary_text(
-                    "Please choose a different audio track or ensure the file has correct language metadata."
-                )
-                dialog.run()
-                dialog.destroy()
-                self.status_label.set_text("Aborted: unknown audio track language.")
-                return
-
-            lang_code = normalize_lang_code(lang_code)
-
-            self.status_label.set_text("Transcribing with Whisper (slow)...")
             model = whisper.load_model("medium")
-            result = model.transcribe(str(audio_path), language="ja")
+            result = model.transcribe(str(audio_path), language=lang_code)
 
-            self.status_label.set_text("Generating SRT file...")
+            GLib.idle_add(self.status_label.set_text, "Generating subtitles...")
+
             subtitles = []
             for i, segment in enumerate(result['segments']):
                 start = timedelta(seconds=segment['start'])
@@ -152,22 +145,30 @@ class SubtitleApp(Gtk.Window):
                 content = segment['text']
                 subtitles.append(srt.Subtitle(index=i + 1, start=start, end=end, content=content))
 
-
-
-            # Build filename: /same/path/to/video_basename.lang.srt
-            video_path = Path(filepath)
-            srt_filename = video_path.with_name(video_path.stem + f".{lang_code}.srt")
-
-            with open(srt_filename, "w", encoding="utf-8") as f:
+            srt_path = Path(filepath).with_name(Path(filepath).stem + f".{lang_code}.srt")
+            with open(srt_path, "w", encoding="utf-8") as f:
                 f.write(srt.compose(subtitles))
 
-            self.status_label.set_text(f"✅ Subtitles saved to {srt_filename}")
+            audio_path.unlink(missing_ok=True)
 
-            # Clean up
-            audio_path.unlink()
+            GLib.idle_add(self.status_label.set_text, f"✅ Subtitles saved to {srt_path}")
 
         except Exception as e:
-            self.status_label.set_text(f"Error: {str(e)}")
+            GLib.idle_add(self._show_error_dialog, f"Error: {str(e)}")
+
+    def _show_error_dialog(self, message):
+        dialog = Gtk.MessageDialog(
+            transient_for=self,
+            flags=0,
+            message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.OK,
+            text="An error occurred",
+        )
+        dialog.format_secondary_text(message)
+        dialog.run()
+        dialog.destroy()
+        self.status_label.set_text("An error occurred.")
+
 
 def normalize_lang_code(code):
     code = code.lower()
