@@ -4,7 +4,7 @@
 transcription with OpenAI Whisper. It is designed to assist with language learning by enabling users to watch foreign
 television shows and movies with native-language subtitles, even when official subtitles are unavailable.
 
-![](docs/Screenshot%20from%202025-04-19%2016-31-53.png)
+![](docs/Screenshot%20from%202025-04-19%2016-39-48.png)
 
 The application includes:
 

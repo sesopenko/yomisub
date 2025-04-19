@@ -18,7 +18,7 @@ import threading
 
 class SubtitleApp(Gtk.Window):
     def __init__(self):
-        Gtk.Window.__init__(self, title="Japanese Subtitle Generator")
+        Gtk.Window.__init__(self, title="Subtitle Generator")
         self.set_border_width(10)
         self.set_default_size(400, 100)
 
