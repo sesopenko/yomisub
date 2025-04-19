@@ -1,4 +1,7 @@
 import gi
+# © 2025 Sean Esopenko
+# https://github.com/sesopenko/yomisub
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
