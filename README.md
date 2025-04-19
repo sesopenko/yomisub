@@ -10,7 +10,7 @@ Debian 12 requirements:
 sudo apt update
 
 # install python venv
-sudo apt install python3.11-venv
+sudo apt install python3.11-venv ffmpeg
 
 # install gtk dependencies
 
