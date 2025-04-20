@@ -6,6 +6,7 @@ import gi
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
+import re
 import gc
 import torch
 import whisperx
@@ -22,6 +23,9 @@ import threading
 
 import logging
 import os
+import csv
+
+import unicodedata
 
 log_level = os.getenv("LOGGING_LEVEL", "INFO").upper()
 logging.basicConfig(
@@ -322,6 +326,24 @@ class SubtitleApp(Gtk.Window):
                 f.write(srt.compose(subtitles))
 
             audio_path.unlink(missing_ok=True)
+
+            # Write debug info to CSV
+            debug_csv_path = Path(filepath).with_name(Path(filepath).stem + f".{lang_code}.debug.csv")
+            logger.info(f"Writing debug CSV to {debug_csv_path}")
+
+            with open(debug_csv_path, "w", encoding="utf-8", newline="") as csvfile:
+                fieldnames = ["start", "end", "word", "speaker"]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                for word in word_segments['word_segments']:
+                    writer.writerow({
+                        "start": word.get("start", ""),
+                        "end": word.get("end", ""),
+                        "word": word.get("word", ""),
+                        "speaker": word.get("speaker", "")
+                    })
+
             logger.info(f"deleted {srt_path}")
 
             GLib.idle_add(self.status_label.set_text, f"✅ Subtitles saved to {srt_path}")
@@ -369,7 +391,31 @@ def normalize_lang_code(code):
 
     return code  # fallback
 
-def split_by_speaker(words, max_chars=80, max_duration=4.0):
+def clean_repetitions(text, max_repeats=5):
+    # Collapse long runs of the same character (like ー or え)
+    return re.sub(r'(.)\1{'+str(max_repeats)+r',}', lambda m: m.group(1) * max_repeats + '…', text)
+
+def is_cjk_char(char):
+    """Rudimentary check for CJK characters by Unicode block."""
+    return any([
+        '\u4e00' <= char <= '\u9fff',  # CJK Unified Ideographs
+        '\u3040' <= char <= '\u309f',  # Hiragana
+        '\u30a0' <= char <= '\u30ff',  # Katakana
+        '\uff00' <= char <= '\uffef',  # Full-width roman + half-width kana
+    ])
+
+def is_mostly_cjk(text, threshold=0.5):
+    cjk_count = sum(1 for c in text if is_cjk_char(c))
+    return cjk_count / max(1, len(text)) > threshold
+
+def build_subtitle_text(words):
+    raw_text = "".join(w["word"] for w in words).strip()
+    if is_mostly_cjk(raw_text):
+        return raw_text
+    else:
+        return " ".join(w["word"] for w in words).strip()
+
+def split_by_speaker(words, max_chars=80, max_duration=4.0, max_repeats=5):
     subs = []
     current = []
     current_speaker = words[0].get('speaker', "")
@@ -377,32 +423,88 @@ def split_by_speaker(words, max_chars=80, max_duration=4.0):
     current_end = words[0]['end']
     idx = 1
 
-    for word in words:
+    for i, word in enumerate(words):
         if not word.get("word"):
             continue
 
         speaker = word.get("speaker", "")
-        if (speaker != current_speaker) or (current_end - current_start > max_duration):
-            # Finish current subtitle
-            text = " ".join(w["word"] for w in current).strip()
-            if text:
-                subs.append((idx, current_start, current_end, text))
+        word_start = word["start"]
+        word_end = word["end"]
+
+        # Check if we should split
+        text = " ".join(w["word"] for w in current + [word])
+        should_split = (
+            speaker != current_speaker or
+            len(text) > max_chars or
+            (word_end - current_start) > max_duration
+        )
+
+        if current and should_split:
+            subtitle_text = build_subtitle_text(current)
+            subtitle_text = clean_repetitions(subtitle_text, max_repeats)
+            if subtitle_text:
+                current_end = min(current_end, current_start + max_duration)  # Cap to max_duration
+                subs.append((idx, current_start, current_end, subtitle_text))
                 idx += 1
 
             current = []
-            current_start = word["start"]
+            current_start = word_start
             current_speaker = speaker
 
         current.append(word)
-        current_end = word["end"]
+        current_end = word_end
 
-    # Add final segment
+    # Final subtitle
     if current:
-        text = " ".join(w["word"] for w in current).strip()
-        if text:
-            subs.append((idx, current_start, current_end, text))
+        subtitle_text = " ".join(w["word"] for w in current).strip()
+        subtitle_text = clean_repetitions(subtitle_text, max_repeats)
+        if subtitle_text:
+            current_end = min(current_end, current_start + max_duration)  # Cap to max_duration
+            subs.append((idx, current_start, current_end, subtitle_text))
 
     return subs
+
+def is_repeated_char_text(text):
+    # Remove any ellipses or spacing first
+    text = text.replace('…', '').replace(' ', '')
+    if not text:
+        return None
+    first_char = text[0]
+    return first_char if all(c == first_char for c in text) else None
+
+def collapse_redundant_subs(subs, time_threshold=0.25):
+    collapsed = []
+    prev_sub = None
+
+    for sub in subs:
+        idx, start, end, text = sub
+        repeated_char = is_repeated_char_text(text)
+
+        if prev_sub:
+            prev_idx, prev_start, prev_end, prev_text = prev_sub
+            prev_repeated_char = is_repeated_char_text(prev_text)
+
+            # Same repeated character
+            same_repetition = repeated_char and prev_repeated_char and repeated_char == prev_repeated_char
+            close_in_time = (start - prev_end) < time_threshold
+
+            if same_repetition and close_in_time:
+                # Extend previous subtitle’s end time
+                prev_sub = (prev_idx, prev_start, end, prev_text)
+                continue
+            else:
+                collapsed.append(prev_sub)
+
+        prev_sub = sub
+
+    if prev_sub:
+        collapsed.append(prev_sub)
+
+    # Re-number the indexes
+    for i, (idx, start, end, text) in enumerate(collapsed, 1):
+        collapsed[i - 1] = (i, start, end, text)
+
+    return collapsed
 
 
 def split_words_to_subtitles(words, max_chars=80, max_duration=4.0):
