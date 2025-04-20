@@ -30,7 +30,18 @@ sudo apt update
 
 # install system dependencies
 
-sudo apt install python3.11-venv ffmpeg python3-gi python3-gi-cairo gir1.2-gtk-3.0 libgirepository1.0-dev gir1.2-gtk-3.0
+sudo apt install \
+    python3.11-venv \
+    ffmpeg \
+    python3-gi \
+    python3-gi-cairo \
+    gir1.2-gtk-3.0 \
+    libgirepository1.0-dev \
+    espeak-ng \
+    libespeak-ng1 \
+    libsndfile1 \
+    build-essential \
+    python3-dev
 
 # add system site package to venv
 python3 -m venv .venv --system-site-packages
@@ -43,6 +54,21 @@ python -c "import gi"
 
 # install pip dependencies
 source .venv/bin/activate
+
+# install torch.  See https://pytorch.org/get-started/locally/
+# Example for CUDA 12.4
+pip3 install torch torchvision torchaudio
+
+# append location to cudnn libraries at end of .venv/bin/activate
+# use the proper location of your own venv:
+# export LD_LIBRARY_PATH="/home/sean/src/github.com/sesopenko/yomisub/.venv/lib/python3.11/site-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH"
+
+# if running in pycharm build target set the above environment variable in the build settings
+
+# Install WhisperX
+pip install git+https://github.com/m-bain/whisperx.git
+
+
 pip install -r requirements.txt
 ```
 

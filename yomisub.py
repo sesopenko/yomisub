@@ -1,12 +1,13 @@
+import textwrap
+
 import gi
 # © 2025 Sean Esopenko
 # https://github.com/sesopenko/yomisub
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-
-import whisper
-from moviepy.video.io.VideoFileClip import VideoFileClip  # ✅ updated import for moviepy 2.x
+import torch
+import whisperx
 import srt
 from datetime import timedelta
 import os
@@ -15,6 +16,18 @@ import subprocess
 import json
 import pycountry
 import threading
+
+import logging
+import os
+
+log_level = os.getenv("LOGGING_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=log_level,
+    format='[%(levelname)s] %(asctime)s - %(message)s',
+    datefmt='%H:%M:%S'
+)
+
+logger = logging.getLogger(__name__)
 
 class SubtitleApp(Gtk.Window):
     def __init__(self):
@@ -48,7 +61,9 @@ class SubtitleApp(Gtk.Window):
             "base": "base (1.5 GB)",
             "small": "small (2.5 GB)",
             "medium": "medium (5.5 GB)",
-            "large-v2": "large-v2 (12 GB)"
+            "large-v1": "large-v1 (10 GB)",
+            "large-v2": "large-v2 (12 GB)",
+            "large-v3": "large-v3 (12+ GB)"
         }
 
         first_button = None
@@ -137,6 +152,7 @@ class SubtitleApp(Gtk.Window):
 
         thread = threading.Thread(target=run_subtitle_job)
         thread.start()
+
     def _run_subtitle_generation(self, filepath):
         GObject = Gtk.GObject if hasattr(Gtk, 'GObject') else gi.repository.GObject
         from gi.repository import GLib
@@ -161,6 +177,7 @@ class SubtitleApp(Gtk.Window):
 
             # Update label on main thread
             GLib.idle_add(self.status_label.set_text, "Extracting audio...")
+            logging.info("Extracting audio to %s via ffmpeg", audio_path)
 
             subprocess.run([
                 "ffmpeg", "-y", "-i", filepath,
@@ -168,32 +185,56 @@ class SubtitleApp(Gtk.Window):
                 str(audio_path)
             ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
-            GLib.idle_add(self.status_label.set_text, "Transcribing with Whisper...")
-
+            device = "cuda" if torch.cuda.is_available() else "cpu"
             model_name = self.get_selected_model()
-            model = whisper.load_model(model_name)
+            GLib.idle_add(self.status_label.set_text, f"Loading Whisper Model for device {device}...")
+            logger.info("Loading Whisper Model for device %s", device)
+            model = whisperx.load_model(model_name, device=device)
 
+            GLib.idle_add(self.status_label.set_text, "Transcribing with Whisper...")
+            logger.info("Transcribing with Whisper for language %s", lang_code)
             result = model.transcribe(str(audio_path), language=lang_code)
 
-            GLib.idle_add(self.status_label.set_text, "Generating subtitles...")
+            # Load alignment model for better timing
+            GLib.idle_add(self.status_label.set_text, f"Loading alignment model for device {device}")
+            logger.info("Loading alignment model for device %s", device)
+            model_a, metadata = whisperx.load_align_model(language_code=lang_code, device=device)
+            GLib.idle_add(self.status_label.set_text, "Re-aligning with Whisper...")
+            logger.info("Re-aligning with Whisper for language %s", lang_code)
+            aligned_result = whisperx.align(
+                result["segments"], model_a, metadata, str(audio_path), device=device
+            )
 
-            max_duration = 6.0  # max subtitle duration to prevent huge blocks
-            padding = 0.5
-            subtitles = []
-            for i, segment in enumerate(result['segments']):
-                start = timedelta(seconds=segment['start'])
-                end_time = min(segment['end'] + padding, segment['start'] + max_duration)
-                end = timedelta(seconds=end_time)
-                content = segment['text']
-                subtitles.append(srt.Subtitle(index=i + 1, start=start, end=end, content=content))
+            GLib.idle_add(self.status_label.set_text, "Transforming to SRT subtitles...")
+            logger.info("Transforming to SRT subtitles for language %s", lang_code)
+
+            subs = []
+            idx = 1
+            for i, segment in enumerate(aligned_result['segments']):
+                words = segment.get('words', [])
+                if not words:
+                    continue
+
+                split_subs = split_words_to_subtitles(words)
+                for sid, start, end, text in split_subs:
+                    subs.append(srt.Subtitle(
+                        index=idx,
+                        start=timedelta(seconds=start),
+                        end=timedelta(seconds=end),
+                        content=textwrap.fill(text, width=40)
+                    ))
+                    idx += 1
 
             srt_path = Path(filepath).with_name(Path(filepath).stem + f".{lang_code}.srt")
+            logger.info("Writing SRT subtitles to %s", srt_path)
             with open(srt_path, "w", encoding="utf-8") as f:
-                f.write(srt.compose(subtitles))
+                f.write(srt.compose(subs))
 
             audio_path.unlink(missing_ok=True)
+            logger.info(f"deleted {srt_path}")
 
             GLib.idle_add(self.status_label.set_text, f"✅ Subtitles saved to {srt_path}")
+            logger.info(f"saved to {srt_path}")
 
         except Exception as e:
             GLib.idle_add(self._show_error_dialog, f"Error: {str(e)}")
@@ -228,6 +269,46 @@ def normalize_lang_code(code):
         pass
 
     return code  # fallback
+
+def split_words_to_subtitles(words, max_chars=80, max_duration=4.0):
+    subtitles = []
+    current = []
+    current_start = words[0]['start']
+    current_end = words[0]['end']
+    idx = 1
+
+    for word in words:
+        if not word.get("word"):  # skip empty tokens
+            continue
+
+        current.append(word)
+        current_end = word["end"]
+
+        current_text = " ".join(w["word"] for w in current)
+        current_duration = current_end - current_start
+
+        if len(current_text) > max_chars or current_duration > max_duration:
+            subtitles.append((
+                idx,
+                current_start,
+                current_end,
+                current_text
+            ))
+            idx += 1
+            current = []
+            if word.get("word"):
+                current_start = word["start"]
+
+    if current:
+        current_text = " ".join(w["word"] for w in current)
+        subtitles.append((
+            idx,
+            current_start,
+            current_end,
+            current_text
+        ))
+
+    return subtitles
 
 if __name__ == "__main__":
     win = SubtitleApp()
