@@ -68,9 +68,20 @@ pip3 install torch torchvision torchaudio
 # Install WhisperX
 pip install git+https://github.com/m-bain/whisperx.git
 
+pip install pyannote.audio
+
 
 pip install -r requirements.txt
 ```
+
+## Get a hugging face access token
+
+1. https://huggingface.co/settings/tokens
+2. Create new token, give it a name and read access to personal and gated repos
+3. add a line to `~/.bashrc`: `export HF_TOKEN=your_actual_token_here`
+4. Add HF_TOKEN environment variable to pycharm build configuration
+5. Go to https://huggingface.co/pyannote/segmentation-3.0
+6. Agree to access repository
 
 ## Running
 

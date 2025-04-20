@@ -8,10 +8,12 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 import torch
 import whisperx
+from whisperx import DiarizationPipeline
 import srt
 from datetime import timedelta
 import os
 from pathlib import Path
+from textwrap import fill
 import subprocess
 import json
 import pycountry
@@ -191,9 +193,19 @@ class SubtitleApp(Gtk.Window):
             logger.info("Loading Whisper Model for device %s", device)
             model = whisperx.load_model(model_name, device=device)
 
+            GLib.idle_add(self.status_label.set_text, f"Loading diarizer model for device {device}...")
+            logger.info("Loading diarizer model...")
+            HF_TOKEN = os.getenv("HF_TOKEN")
+            diarize_model = DiarizationPipeline(use_auth_token=HF_TOKEN, device=device)
+
             GLib.idle_add(self.status_label.set_text, "Transcribing with Whisper...")
             logger.info("Transcribing with Whisper for language %s", lang_code)
             result = model.transcribe(str(audio_path), language=lang_code)
+
+
+            GLib.idle_add(self.status_label.set_text, "Diarizing to detect speakers...")
+            logger.info("Diarizing to detect speakers...")
+            result = diarize_model(audio=str(audio_path), transcriptions=result["segments"])
 
             # Load alignment model for better timing
             GLib.idle_add(self.status_label.set_text, f"Loading alignment model for device {device}")
@@ -208,27 +220,21 @@ class SubtitleApp(Gtk.Window):
             GLib.idle_add(self.status_label.set_text, "Transforming to SRT subtitles...")
             logger.info("Transforming to SRT subtitles for language %s", lang_code)
 
-            subs = []
+            word_segments = aligned_result["word_segments"]
+            subtitles = []
             idx = 1
-            for i, segment in enumerate(aligned_result['segments']):
-                words = segment.get('words', [])
-                if not words:
-                    continue
-
-                split_subs = split_words_to_subtitles(words)
-                for sid, start, end, text in split_subs:
-                    subs.append(srt.Subtitle(
-                        index=idx,
-                        start=timedelta(seconds=start),
-                        end=timedelta(seconds=end),
-                        content=textwrap.fill(text, width=40)
-                    ))
-                    idx += 1
+            for idx, start, end, text in self.split_by_speaker(word_segments):
+                subtitles.append(srt.Subtitle(
+                    index=idx,
+                    start=timedelta(seconds=start),
+                    end=timedelta(seconds=end),
+                    content=text
+                ))
 
             srt_path = Path(filepath).with_name(Path(filepath).stem + f".{lang_code}.srt")
             logger.info("Writing SRT subtitles to %s", srt_path)
             with open(srt_path, "w", encoding="utf-8") as f:
-                f.write(srt.compose(subs))
+                f.write(srt.compose(subtitles))
 
             audio_path.unlink(missing_ok=True)
             logger.info(f"deleted {srt_path}")
@@ -237,6 +243,7 @@ class SubtitleApp(Gtk.Window):
             logger.info(f"saved to {srt_path}")
 
         except Exception as e:
+            logger.error(e)
             GLib.idle_add(self._show_error_dialog, f"Error: {str(e)}")
 
     def _show_error_dialog(self, message):
@@ -251,6 +258,8 @@ class SubtitleApp(Gtk.Window):
         dialog.run()
         dialog.destroy()
         self.status_label.set_text("An error occurred.")
+
+
 
 
 def normalize_lang_code(code):
@@ -269,6 +278,42 @@ def normalize_lang_code(code):
         pass
 
     return code  # fallback
+
+def split_by_speaker(words, max_chars=80, max_duration=4.0):
+    subs = []
+    current = []
+    current_speaker = words[0]['speaker']
+    current_start = words[0]['start']
+    current_end = words[0]['end']
+    idx = 1
+
+    for word in words:
+        if not word.get("word"):
+            continue
+
+        speaker = word["speaker"]
+        if (speaker != current_speaker) or (current_end - current_start > max_duration):
+            # Finish current subtitle
+            text = " ".join(w["word"] for w in current).strip()
+            if text:
+                subs.append((idx, current_start, current_end, text))
+                idx += 1
+
+            current = []
+            current_start = word["start"]
+            current_speaker = speaker
+
+        current.append(word)
+        current_end = word["end"]
+
+    # Add final segment
+    if current:
+        text = " ".join(w["word"] for w in current).strip()
+        if text:
+            subs.append((idx, current_start, current_end, text))
+
+    return subs
+
 
 def split_words_to_subtitles(words, max_chars=80, max_duration=4.0):
     subtitles = []
