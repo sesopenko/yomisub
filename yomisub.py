@@ -6,6 +6,7 @@ import gi
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
+import gc
 import torch
 import whisperx
 from whisperx import DiarizationPipeline
@@ -257,8 +258,30 @@ class SubtitleApp(Gtk.Window):
             device = "cuda" if torch.cuda.is_available() else "cpu"
             model_name = self.get_selected_model()
             GLib.idle_add(self.status_label.set_text, f"Loading Whisper Model for device {device}...")
-            logger.info("Loading Whisper Model for device %s", device)
+            logger.info("Loading Whisper Model %s for device %s", model_name, device)
             model = whisperx.load_model(model_name, device=device)
+
+
+
+            GLib.idle_add(self.status_label.set_text, "Transcribing with Whisper...")
+            logger.info("Transcribing with Whisper for language %s", lang_code)
+            result = model.transcribe(str(audio_path), language=lang_code)
+            logger.info(f"Transcription result type: {type(result)}, value: {result}")
+            del model
+            self.free_cache()
+
+            # Load alignment model for better timing
+            GLib.idle_add(self.status_label.set_text, f"Loading alignment model for device {device}")
+            logger.info("Loading alignment model for device %s", device)
+            model_a, metadata = whisperx.load_align_model(language_code=lang_code, device=device)
+            GLib.idle_add(self.status_label.set_text, "Re-aligning with Whisper...")
+            logger.info("Re-aligning with Whisper for language %s", lang_code)
+            aligned_result = whisperx.align(
+                result["segments"], model_a, metadata, str(audio_path), device=device
+            )
+
+            del model_a
+            self.free_cache()
 
             GLib.idle_add(self.status_label.set_text, f"Loading diarizer model for device {device}...")
             logger.info("Loading diarizer model...")
@@ -272,32 +295,20 @@ class SubtitleApp(Gtk.Window):
 
             diarize_model = DiarizationPipeline(use_auth_token=token, device=device)
 
-            GLib.idle_add(self.status_label.set_text, "Transcribing with Whisper...")
-            logger.info("Transcribing with Whisper for language %s", lang_code)
-            result = model.transcribe(str(audio_path), language=lang_code)
-
-
             GLib.idle_add(self.status_label.set_text, "Diarizing to detect speakers...")
             logger.info("Diarizing to detect speakers...")
-            result = diarize_model(audio=str(audio_path), transcriptions=result["segments"])
+            diarize_segments = diarize_model(audio=str(audio_path))
 
-            # Load alignment model for better timing
-            GLib.idle_add(self.status_label.set_text, f"Loading alignment model for device {device}")
-            logger.info("Loading alignment model for device %s", device)
-            model_a, metadata = whisperx.load_align_model(language_code=lang_code, device=device)
-            GLib.idle_add(self.status_label.set_text, "Re-aligning with Whisper...")
-            logger.info("Re-aligning with Whisper for language %s", lang_code)
-            aligned_result = whisperx.align(
-                result["segments"], model_a, metadata, str(audio_path), device=device
-            )
+            # Inject speaker labels into transcription segments
+            aligned_result["segments"] = whisperx.assign_word_speakers(diarize_segments, aligned_result)
+            word_segments = aligned_result["segments"]
 
             GLib.idle_add(self.status_label.set_text, "Transforming to SRT subtitles...")
             logger.info("Transforming to SRT subtitles for language %s", lang_code)
 
-            word_segments = aligned_result["word_segments"]
             subtitles = []
             idx = 1
-            for idx, start, end, text in self.split_by_speaker(word_segments):
+            for idx, start, end, text in split_by_speaker(word_segments["word_segments"]):
                 subtitles.append(srt.Subtitle(
                     index=idx,
                     start=timedelta(seconds=start),
@@ -319,6 +330,11 @@ class SubtitleApp(Gtk.Window):
         except Exception as e:
             logger.error(e)
             GLib.idle_add(self._show_error_dialog, f"Error: {str(e)}")
+
+    def free_cache(self):
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     def _show_error_dialog(self, message):
         dialog = Gtk.MessageDialog(
@@ -356,7 +372,7 @@ def normalize_lang_code(code):
 def split_by_speaker(words, max_chars=80, max_duration=4.0):
     subs = []
     current = []
-    current_speaker = words[0]['speaker']
+    current_speaker = words[0].get('speaker', "")
     current_start = words[0]['start']
     current_end = words[0]['end']
     idx = 1
@@ -365,7 +381,7 @@ def split_by_speaker(words, max_chars=80, max_duration=4.0):
         if not word.get("word"):
             continue
 
-        speaker = word["speaker"]
+        speaker = word.get("speaker", "")
         if (speaker != current_speaker) or (current_end - current_start > max_duration):
             # Finish current subtitle
             text = " ".join(w["word"] for w in current).strip()
