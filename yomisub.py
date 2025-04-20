@@ -31,6 +31,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+CONFIG_PATH = Path.home() / ".config" / "yomisub"
+HF_TOKEN_FILE = CONFIG_PATH / "huggingface_token.txt"
+
 class SubtitleApp(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="Subtitle Generator")
@@ -84,6 +87,10 @@ class SubtitleApp(Gtk.Window):
         self.button.connect("clicked", self.on_generate_clicked)
         vbox.pack_start(self.button, True, True, 0)
 
+        hf_button = Gtk.Button(label="Configure Hugging Face")
+        hf_button.connect("clicked", self.on_configure_huggingface_clicked)
+        vbox.pack_start(hf_button, True, True, 0)
+
         self.status_label = Gtk.Label(label="")
         vbox.pack_start(self.status_label, True, True, 0)
 
@@ -92,6 +99,66 @@ class SubtitleApp(Gtk.Window):
             if btn.get_active():
                 return model
         return "medium"  # fallback
+
+    def on_configure_huggingface_clicked(self, widget):
+        dialog = Gtk.Dialog(
+            title="Hugging Face Configuration",
+            transient_for=self,
+            flags=0,
+        )
+        dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Save", Gtk.ResponseType.OK)
+
+        box = dialog.get_content_area()
+        box.set_spacing(10)
+
+        instructions = Gtk.Label()
+        instructions.set_markup(
+            '1. Get a token: <a href="https://hf.co/settings/tokens">https://hf.co/settings/tokens</a>\n'
+            '2. Select Read access to contents of all public gated repos you can access\n'
+            '3. Paste your token below\n'
+            '4. Accept model access: <a href="https://huggingface.co/pyannote/segmentation-3.0">'
+            'https://huggingface.co/pyannote/segmentation-3.0</a>\n'
+            '5. Click Save'
+        )
+        instructions.set_justify(Gtk.Justification.LEFT)
+        instructions.set_line_wrap(True)
+        instructions.set_selectable(True)
+        instructions.set_use_markup(True)
+
+        box.add(instructions)
+
+        entry = Gtk.Entry()
+
+        token_label = Gtk.Label()
+        token_label.set_justify(Gtk.Justification.LEFT)
+        token_label.set_markup(
+            'Huggingface Token:'
+        )
+        box.add(token_label)
+        entry.set_placeholder_text("Paste your Hugging Face token here")
+        entry.set_visibility(False)  # hide characters like a password
+        entry.set_invisible_char("*")  # optional: set masking char
+        # Pre-fill if already saved
+        if HF_TOKEN_FILE.exists():
+            with open(HF_TOKEN_FILE, "r", encoding="utf-8") as f:
+                entry.set_text(f.read().strip())
+
+        box.add(entry)
+
+        dialog.show_all()
+        response = dialog.run()
+
+        if response == Gtk.ResponseType.OK:
+            token = entry.get_text().strip()
+            CONFIG_PATH.mkdir(parents=True, exist_ok=True)
+            with open(HF_TOKEN_FILE, "w", encoding="utf-8") as f:
+                f.write(token)
+            self.status_label.set_text("✅ Hugging Face token saved.")
+        else:
+            self.status_label.set_text("Cancelled Hugging Face configuration.")
+
+        dialog.destroy()
 
     def on_file_chosen(self, widget):
         filepath = self.file_chooser.get_filename()
@@ -195,8 +262,15 @@ class SubtitleApp(Gtk.Window):
 
             GLib.idle_add(self.status_label.set_text, f"Loading diarizer model for device {device}...")
             logger.info("Loading diarizer model...")
-            HF_TOKEN = os.getenv("HF_TOKEN")
-            diarize_model = DiarizationPipeline(use_auth_token=HF_TOKEN, device=device)
+            token = None
+            if HF_TOKEN_FILE.exists():
+                with open(HF_TOKEN_FILE, "r", encoding="utf-8") as f:
+                    token = f.read().strip()
+            else:
+                GLib.idle_add(self._show_error_dialog, "Could not retrieve huggingface token. Configure Huggingface.")
+                return
+
+            diarize_model = DiarizationPipeline(use_auth_token=token, device=device)
 
             GLib.idle_add(self.status_label.set_text, "Transcribing with Whisper...")
             logger.info("Transcribing with Whisper for language %s", lang_code)
