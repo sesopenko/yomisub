@@ -1,6 +1,10 @@
+import pickle
 import textwrap
 
 import gi
+
+from subtitles.tokenization import group_japanese_words
+
 # © 2025 Sean Esopenko
 # https://github.com/sesopenko/yomisub
 
@@ -38,6 +42,7 @@ logger = logging.getLogger(__name__)
 
 CONFIG_PATH = Path.home() / ".config" / "yomisub"
 HF_TOKEN_FILE = CONFIG_PATH / "huggingface_token.txt"
+TEMP_HOME = Path.home() / ".temp" / "yoomisub"
 
 class SubtitleApp(Gtk.Window):
     def __init__(self):
@@ -312,7 +317,11 @@ class SubtitleApp(Gtk.Window):
 
             subtitles = []
             idx = 1
-            for idx, start, end, text in split_by_speaker(word_segments["word_segments"]):
+            _pickle_temp(word_segments['word_segments'], 'word_segments')
+            tokenized_words = word_segments['word_segments']
+            if lang_code == "ja":
+                tokenized_words = group_japanese_words(word_segments['word_segments'])
+            for idx, start, end, text in split_by_speaker(tokenized_words, lang_code):
                 subtitles.append(srt.Subtitle(
                     index=idx,
                     start=timedelta(seconds=start),
@@ -415,7 +424,13 @@ def build_subtitle_text(words):
     else:
         return " ".join(w["word"] for w in words).strip()
 
-def split_by_speaker(words, max_chars=80, max_duration=4.0, max_repeats=5):
+def _pickle_temp(to_save, name):
+    TEMP_HOME.mkdir(parents=True, exist_ok=True)
+    path = TEMP_HOME / f"{name}.pickle"
+    with open(path, "wb") as f:
+        pickle.dump(to_save, f)
+
+def split_by_speaker(words, lang_code, max_chars=80, max_duration=4.0, max_repeats=5):
     subs = []
     current = []
     current_speaker = words[0].get('speaker', "")
@@ -432,7 +447,7 @@ def split_by_speaker(words, max_chars=80, max_duration=4.0, max_repeats=5):
         word_end = word["end"]
 
         # Check if we should split
-        text = " ".join(w["word"] for w in current + [word])
+        text = build_subtitle_text(words)
         should_split = (
             speaker != current_speaker or
             len(text) > max_chars or
