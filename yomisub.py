@@ -3,6 +3,7 @@ import textwrap
 
 import gi
 
+from organization.naming import extract_show_name
 from subtitles.tokenization import group_japanese_words
 
 # © 2025 Sean Esopenko
@@ -32,6 +33,8 @@ import csv
 import unicodedata
 
 log_level = os.getenv("LOGGING_LEVEL", "INFO").upper()
+if log_level == "DEBUG":
+    logging.getLogger('luigi-interface').setLevel(logging.DEBUG)
 logging.basicConfig(
     level=log_level,
     format='[%(levelname)s] %(asctime)s - %(message)s',
@@ -225,14 +228,72 @@ class SubtitleApp(Gtk.Window):
             return
 
         self.status_label.set_text("Processing...")
+        self._run_subtitle_generation(filepath)
 
-        def run_subtitle_job():
-            self._run_subtitle_generation(filepath)
-
-        thread = threading.Thread(target=run_subtitle_job)
-        thread.start()
+        # def run_subtitle_job():
+        #     self._run_subtitle_generation(filepath)
+        #
+        # thread = threading.Thread(target=run_subtitle_job)
+        # thread.start()
 
     def _run_subtitle_generation(self, filepath):
+        model_name = self.get_selected_model()
+        track_index = self.audio_track_combo.get_active()
+        track_label = self.audio_track_combo.get_active_text()
+        lang_code = "und"
+        if track_label and "(" in track_label:
+            lang_code = track_label.split("(")[-1].replace(")", "").strip()
+
+        lang_code = normalize_lang_code(lang_code)
+
+        if lang_code == "und":
+            GLib.idle_add(self._show_error_dialog, "Could not determine the language of the selected audio track.")
+            return
+        try:
+            show_name = extract_show_name(filepath)
+        except ValueError as e:
+            dialog = Gtk.MessageDialog(
+                transient_for=self,
+                flags=0,
+                message_type=Gtk.MessageType.ERROR,
+                buttons=Gtk.ButtonsType.CLOSE,
+                text="Error"
+            )
+            dialog.format_secondary_text("Must have a show folder in the path of the form `Show Name (2025)`")
+            dialog.run()
+            dialog.destroy()
+            return
+        import luigi
+        from tasks.transcribe_audio import TranscribeAudio
+        success = luigi.build(
+            [
+                TranscribeAudio(
+                    video_path=filepath,
+                    show_name=show_name,
+                    lang_code=lang_code,
+                    model_name=model_name,
+                ),
+            ],
+            local_scheduler=True
+        )
+
+        dialog = Gtk.MessageDialog(
+            transient_for=self,
+            flags=0,
+            message_type=Gtk.MessageType.INFO,
+            buttons=Gtk.ButtonsType.CLOSE,
+            text="Info"
+        )
+        if success:
+            text = f"{show_name} ({lang_code}) successful"
+        else:
+            text = f"{show_name} ({lang_code}) failed"
+        dialog.format_secondary_text(text)
+        dialog.run()
+        dialog.destroy()
+        return
+
+    def _run_subtitle_generation_old(self, filepath):
         GObject = Gtk.GObject if hasattr(Gtk, 'GObject') else gi.repository.GObject
         from gi.repository import GLib
 

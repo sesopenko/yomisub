@@ -175,3 +175,7 @@ cython_debug/
 
 # ide ignores
 .idea
+
+# output ignores
+
+data/
