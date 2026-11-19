@@ -2,7 +2,7 @@
 
 ## Project Structure
 
-`yomisub.py` contains the GTK 3 desktop application, transcription worker, and SRT writer. `pyproject.toml` declares Python dependencies and `uv.lock` pins them. `README.md` documents installation and usage, and `docs/` holds the screenshot used by the README.
+`yomisub.py` wires the production components and launches the GTK 3 application. The `yomisub/` package contains the GTK interface, subtitle workflow, and separate modules for media, model caching, Whisper, and SRT output. Unit tests are in `tests/`. `pyproject.toml` declares Python dependencies and `uv.lock` pins them. `README.md` documents installation and usage, and `docs/` holds the screenshot used by the README.
 
 ## Local Development
 
@@ -17,7 +17,7 @@ Use four spaces per indentation level, `snake_case` for functions and variables,
 
 ## Testing
 
-There is no checked-in test suite or coverage requirement. Run `uv lock --check` and `uv run --locked python -m py_compile yomisub.py`. For subtitle changes, test a short video with a language-tagged audio track and the `tiny` model. Verify that `<video-stem>.<language-code>.srt` contains readable text and valid timestamps. For GPU changes, check the terminal for the active Vulkan backend. For track selection changes, test a video with multiple audio tracks.
+Run `uv lock --check`, `uv run --locked python -m unittest discover -s tests`, and `uv run --locked python -m compileall -q yomisub.py yomisub tests`. The unit tests run without a display, downloads, or media binaries. For subtitle changes, test a short video with a language-tagged audio track and the `tiny` model. Verify that `<video-stem>.<language-code>.srt` contains readable text and valid timestamps. For GPU changes, check the terminal for the active Vulkan backend. For track selection changes, test a video with multiple audio tracks.
 
 ## Commits and Pull Requests
 

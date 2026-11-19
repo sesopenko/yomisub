@@ -69,6 +69,19 @@ GPUs are available, use the Radeon device index from `vulkaninfo --summary` with
 GGML_VK_VISIBLE_DEVICES=1 uv run --locked python yomisub.py
 ```
 
+## Development
+
+`yomisub.py` launches the application. The `yomisub/` package contains the GTK interface,
+subtitle workflow, and adapters for media probing and extraction, model caching, Whisper
+transcription, and SRT output.
+
+Run the unit tests after installing the project dependencies. The tests run without
+a display, downloads, or media binaries.
+
+```bash
+uv run --locked python -m unittest discover -s tests
+```
+
 ## License
 
 This project is open source under the MIT License. See [LICENSE.txt](LICENSE.txt) for full details.
