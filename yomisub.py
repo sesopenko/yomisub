@@ -1,20 +1,25 @@
-import gi
 # © 2025 Sean Esopenko
 # https://github.com/sesopenko/yomisub
 
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
-
-import whisper
-from moviepy.video.io.VideoFileClip import VideoFileClip  # ✅ updated import for moviepy 2.x
-import srt
-from datetime import timedelta
-import os
-from pathlib import Path
-import subprocess
 import json
-import pycountry
+import shutil
+import subprocess
 import threading
+from datetime import timedelta
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from urllib.request import urlopen
+
+import gi
+import pycountry
+import srt
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import GLib, Gtk
+
+MODEL_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main"
+MODELS = ("tiny", "base", "small", "medium", "large-v2")
+
 
 class SubtitleApp(Gtk.Window):
     def __init__(self):
@@ -43,22 +48,14 @@ class SubtitleApp(Gtk.Window):
 
         self.model_buttons = {}
 
-        models = {
-            "tiny": "tiny (1 GB)",
-            "base": "base (1.5 GB)",
-            "small": "small (2.5 GB)",
-            "medium": "medium (5.5 GB)",
-            "large-v2": "large-v2 (12 GB)"
-        }
-
         first_button = None
 
-        for key, label in models.items():
-            btn = Gtk.RadioButton.new_with_label_from_widget(first_button, label)
+        for model_name in MODELS:
+            btn = Gtk.RadioButton.new_with_label_from_widget(first_button, model_name)
             if first_button is None:
                 first_button = btn  # set first radio group
             model_box.pack_start(btn, True, True, 0)
-            self.model_buttons[key] = btn
+            self.model_buttons[model_name] = btn
 
         # Set default selection
         self.model_buttons["medium"].set_active(True)
@@ -121,82 +118,42 @@ class SubtitleApp(Gtk.Window):
         video_filter.add_pattern("*.mkv")
         return video_filter
 
-    import os
-    from pathlib import Path
-
     def on_generate_clicked(self, widget):
         filepath = self.file_chooser.get_filename()
         if not filepath:
             self.status_label.set_text("Please select a video file.")
             return
 
+        track_index = self.audio_track_combo.get_active()
+        track_label = self.audio_track_combo.get_active_text() or ""
+        lang_code = normalize_lang_code(track_label.rpartition("(")[2].removesuffix(")").strip())
+        if (
+            lang_code == "und"
+            or len(lang_code) not in (2, 3)
+            or not lang_code.isascii()
+            or not lang_code.isalpha()
+        ):
+            self._show_error_dialog("Could not determine the language of the selected audio track.")
+            return
+
+        self.button.set_sensitive(False)
         self.status_label.set_text("Processing...")
+        threading.Thread(
+            target=self._run_subtitle_generation,
+            args=(Path(filepath), track_index, lang_code, self.get_selected_model()),
+        ).start()
 
-        def run_subtitle_job():
-            self._run_subtitle_generation(filepath)
-
-        thread = threading.Thread(target=run_subtitle_job)
-        thread.start()
-    def _run_subtitle_generation(self, filepath):
-        GObject = Gtk.GObject if hasattr(Gtk, 'GObject') else gi.repository.GObject
-        from gi.repository import GLib
-
+    def _run_subtitle_generation(self, video_path, track_index, lang_code, model_name):
         try:
-            track_index = self.audio_track_combo.get_active()
-            track_label = self.audio_track_combo.get_active_text()
-            lang_code = "und"
-            if track_label and "(" in track_label:
-                lang_code = track_label.split("(")[-1].replace(")", "").strip()
-
-            lang_code = normalize_lang_code(lang_code)
-
-            if lang_code == "und":
-                GLib.idle_add(self._show_error_dialog, "Could not determine the language of the selected audio track.")
-                return
-
-            app_dir = Path.home() / ".local" / "share" / "yomisub"
-            app_dir.mkdir(parents=True, exist_ok=True)
-
-            audio_path = app_dir / "temp_audio.wav"
-
-            # Update label on main thread
-            GLib.idle_add(self.status_label.set_text, "Extracting audio...")
-
-            subprocess.run([
-                "ffmpeg", "-y", "-i", filepath,
-                "-map", f"0:a:{track_index}", "-acodec", "pcm_s16le",
-                str(audio_path)
-            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-
-            GLib.idle_add(self.status_label.set_text, "Transcribing with Whisper...")
-
-            model_name = self.get_selected_model()
-            model = whisper.load_model(model_name)
-
-            result = model.transcribe(str(audio_path), language=lang_code)
-
-            GLib.idle_add(self.status_label.set_text, "Generating subtitles...")
-
-            max_duration = 6.0  # max subtitle duration to prevent huge blocks
-            padding = 0.5
-            subtitles = []
-            for i, segment in enumerate(result['segments']):
-                start = timedelta(seconds=segment['start'])
-                end_time = min(segment['end'] + padding, segment['start'] + max_duration)
-                end = timedelta(seconds=end_time)
-                content = segment['text']
-                subtitles.append(srt.Subtitle(index=i + 1, start=start, end=end, content=content))
-
-            srt_path = Path(filepath).with_name(Path(filepath).stem + f".{lang_code}.srt")
-            with open(srt_path, "w", encoding="utf-8") as f:
-                f.write(srt.compose(subtitles))
-
-            audio_path.unlink(missing_ok=True)
-
-            GLib.idle_add(self.status_label.set_text, f"✅ Subtitles saved to {srt_path}")
-
-        except Exception as e:
-            GLib.idle_add(self._show_error_dialog, f"Error: {str(e)}")
+            srt_path = generate_subtitles(
+                video_path, track_index, lang_code, model_name,
+                lambda message: GLib.idle_add(self.status_label.set_text, message),
+            )
+            GLib.idle_add(self.status_label.set_text, f"Subtitles saved to {srt_path}")
+        except Exception as error:
+            GLib.idle_add(self._show_error_dialog, str(error))
+        finally:
+            GLib.idle_add(self.button.set_sensitive, True)
 
     def _show_error_dialog(self, message):
         dialog = Gtk.MessageDialog(
@@ -210,6 +167,69 @@ class SubtitleApp(Gtk.Window):
         dialog.run()
         dialog.destroy()
         self.status_label.set_text("An error occurred.")
+
+
+def get_model_path(model_name, report_status):
+    cache_dir = Path.home() / ".cache" / "yomisub" / "models"
+    model_path = cache_dir / f"ggml-{model_name}.bin"
+    if model_path.is_file():
+        return model_path
+
+    report_status(f"Downloading the {model_name} model...")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(dir=cache_dir) as temp_dir:
+        download_path = Path(temp_dir) / model_path.name
+        with urlopen(f"{MODEL_URL}/{model_path.name}", timeout=60) as response:
+            with download_path.open("wb") as download:
+                shutil.copyfileobj(response, download)
+            content_length = response.headers.get("Content-Length")
+        size = download_path.stat().st_size
+        if not size or (content_length is not None and size != int(content_length)):
+            raise RuntimeError(f"The {model_name} model download was incomplete. Try again.")
+        download_path.replace(model_path)
+    return model_path
+
+
+def generate_subtitles(video_path, track_index, lang_code, model_name, report_status):
+    whisper_cli = shutil.which("whisper-cli")
+    if whisper_cli is None:
+        raise RuntimeError("whisper-cli is missing from PATH. Follow the setup in README.md.")
+
+    with TemporaryDirectory(prefix="yomisub-") as temp_dir:
+        audio_path = Path(temp_dir) / "audio.wav"
+        output_stem = Path(temp_dir) / "transcript"
+
+        report_status("Extracting audio...")
+        subprocess.run([
+            "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-i", str(video_path),
+            "-map", f"0:a:{track_index}", "-ac", "1", "-ar", "16000",
+            "-c:a", "pcm_s16le", str(audio_path),
+        ], check=True)
+
+        model_path = get_model_path(model_name, report_status)
+        report_status("Transcribing with whisper.cpp...")
+        try:
+            subprocess.run([
+                whisper_cli, "--model", str(model_path), "--file", str(audio_path),
+                "--language", lang_code, "--output-srt", "--output-file", str(output_stem),
+            ], stdout=subprocess.DEVNULL, check=True)
+        except subprocess.CalledProcessError as error:
+            raise RuntimeError("whisper-cli failed to transcribe the audio. See the terminal for details.") from error
+
+        report_status("Generating subtitles...")
+        subtitles = list(srt.parse(output_stem.with_suffix(".srt").read_text(encoding="utf-8")))
+        for subtitle in subtitles:
+            subtitle.end = min(
+                subtitle.end + timedelta(seconds=0.5),
+                subtitle.start + timedelta(seconds=6),
+            )
+
+    srt_path = video_path.with_name(f"{video_path.stem}.{lang_code}.srt")
+    with TemporaryDirectory(prefix=".yomisub-", dir=srt_path.parent) as temp_dir:
+        output_path = Path(temp_dir) / srt_path.name
+        output_path.write_text(srt.compose(subtitles), encoding="utf-8")
+        output_path.replace(srt_path)
+    return srt_path
 
 
 def normalize_lang_code(code):

@@ -1,7 +1,7 @@
 # sesopenko/yomisub
 
-**yomisub** is a desktop application for automatically generating subtitles for video files using AI-powered
-transcription with OpenAI Whisper. It is designed to assist with language learning by enabling users to watch foreign
+**yomisub** is a desktop application for automatically generating subtitles for video files using
+whisper.cpp. It is designed to assist with language learning by enabling users to watch foreign
 television shows and movies with native-language subtitles, even when official subtitles are unavailable.
 
 ![](docs/Screenshot%20from%202025-04-19%2016-39-48.png)
@@ -18,43 +18,56 @@ This tool was created to support language immersion and comprehension, particula
 
 ---
 
-## Requirements
+## Debian 13 setup
 
-* Python 3.11
-
-Tested on Debian with the following installation process:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and the native
+dependencies below. The Python project uses Python 3.13 on x86-64. Enable Debian's
+`non-free-firmware` repository component for AMD firmware.
 
 ```bash
 sudo apt update
-
-
-# install system dependencies
-
-sudo apt install python3.11-venv ffmpeg python3-gi python3-gi-cairo gir1.2-gtk-3.0 libgirepository1.0-dev gir1.2-gtk-3.0
-
-# add system site package to venv
-python3 -m venv .venv --system-site-packages
-
-# reload venv
-source .venv/bin/activate
-
-# test that gi can now be imported while in the venv
-python -c "import gi"
-
-# install pip dependencies
-source .venv/bin/activate
-pip install -r requirements.txt
+sudo apt install build-essential pkg-config python3-dev libcairo2-dev \
+  libgirepository-2.0-dev gir1.2-gtk-3.0 ffmpeg git cmake libvulkan-dev \
+  glslc mesa-vulkan-drivers vulkan-tools firmware-amd-graphics
 ```
 
-## Running
+### Build the Vulkan transcription engine
+
+Build [whisper.cpp v1.9.5](https://github.com/ggml-org/whisper.cpp/releases/tag/v1.9.5)
+once. Add the build's `bin` directory to your shell startup file to keep
+`whisper-cli` available in future terminals.
 
 ```bash
-python3 yomisub.py
+git clone --branch v1.9.5 --depth 1 https://github.com/ggml-org/whisper.cpp.git "$HOME/.local/src/whisper.cpp"
+cmake -S "$HOME/.local/src/whisper.cpp" -B "$HOME/.local/src/whisper.cpp/build" \
+  -DCMAKE_BUILD_TYPE=Release -DGGML_VULKAN=ON
+cmake --build "$HOME/.local/src/whisper.cpp/build" --parallel --target whisper-cli
+export PATH="$HOME/.local/src/whisper.cpp/build/bin:$PATH"
+vulkaninfo --summary
 ```
 
-Choose a model which will fit within the VRAM space of your GPU. Smaller models are faster but less accurate.
+### Install and run yomisub
 
-Whisper will download the chosen model to `~/.cache/whisper`
+From the yomisub checkout, move any legacy `.venv` aside before the first sync.
+
+```bash
+uv sync --locked
+uv run --locked python yomisub.py
+```
+
+Choose a model that fits in your GPU's VRAM. The app downloads the selected
+multilingual model on first use and caches it in `~/.cache/yomisub/models/`.
+
+To verify GPU use, generate subtitles for a short video with a language-tagged
+audio track and the `tiny` model. Check for the Radeon in the Vulkan device list
+and a `using Vulkan0 backend` line for that device in the terminal. Mesa may
+display the RX 9060 XT as `AMD Radeon Graphics (RADV GFX1200)`. When multiple
+GPUs are available, use the Radeon device index from `vulkaninfo --summary` with
+`GGML_VK_VISIBLE_DEVICES`. This example selects physical device 1.
+
+```bash
+GGML_VK_VISIBLE_DEVICES=1 uv run --locked python yomisub.py
+```
 
 ## License
 

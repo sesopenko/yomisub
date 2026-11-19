@@ -1,0 +1,14 @@
+[project]
+name = "yomisub"
+version = "0.1.0"
+description = "GTK desktop application for generating subtitles from video files"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "pycountry",
+    "PyGObject>=3.54.5,<3.55",
+    "srt",
+]
+
+[tool.uv]
+package = false
