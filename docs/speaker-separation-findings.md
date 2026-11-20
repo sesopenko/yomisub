@@ -111,6 +111,25 @@ We ran the pinned 8 kHz, two-output WHAMR checkpoint once per complete excerpt o
 
 **Throughput and scope.** Separation took 5.57 s for the two natural excerpts together, about 11.3× real time. Model loading added 0.45 s after Python imports. The separation timings include synchronized inference and exclude resampling, disk I/O and Whisper. Peak allocation grew with the length of the excerpt. A full 24-minute SepFormer pass and voice continuity across independently processed windows remain unmeasured. Treat its two outputs as local source candidates and retain the original mix for words lost on both.
 
+### Can Whisper read the isolated 8 kHz speech?
+
+**Whisper recovered a listener-confirmed phrase from an isolated 8 kHz track. Other words changed with the source or the amount of context.** We decoded the exact listening windows again with Japanese whisper.cpp medium on Vulkan. For each of the two scenes we cut identical sample intervals from the original, the 8 kHz mixture and the two SepFormer outputs. The separated audio had already been resampled to the 16 kHz format Whisper expects. Upsampling preserves the clip's duration and cannot restore frequencies above the separator's bandwidth. All eight short-window runs used the same model and options as the twelve full-excerpt decodes.
+
+| Listening window | Exact-window Whisper output on the isolated source | Effect of changing context |
+| --- | --- | --- |
+| S01E10 source 2, 24–29 s | `従来指定される! / 待って待って待って / 誰がいるのか?` | The full-source decode retained two instances of `待って` and the question over 26–29 s. On the five-second crop Whisper placed the final endpoint at 6 s, one second beyond the input. |
+| S01E10 source 1, 24–29 s | `ご視聴ありがとうございました。` | The full-source decode emitted `はい。` around the interruption. The listener could hear a voice on this track but could not make out its words. Neither candidate has support from that listening check. |
+| Crowded source 1, 9–19 s | `その程度の偶然を騒ぐなら宇宙の暖房から生命の発生をし、私たちが今ここにいる確率、0.00000です。` | The full source produced `宇宙の残像` for part of the same passage. Both the 16 kHz and 8 kHz unseparated crops returned `宇宙の誕生`. The isolated crop puts the monologue in a single 9.7 s cue. |
+| Crowded source 2, 9–19 s | `使います! 使いますから!` followed at 18 s on the media clock by `オッケー!` | The first phrase also appeared in the full-source decode. The short final interjection appeared only on the cropped source 2 decode in that window. |
+
+On the separated S01E10 source 2, Sean could not distinguish the opening consonant or the next syllable in Whisper’s candidate `じゅうらい`. He heard possibilities resembling `しゅ` or `じゅ` and `らい` or `かい`. The original comparison was played from the MP4’s Japanese 44.1 kHz stereo FLAC track starting at 22 s, retaining the lead-in. On that playback he heard something closer to `ゆうがい`. Record the phonetic reading as tentative. The cropped 16 kHz unseparated decode produced `誘害指定される`, and its spelling is also unverified. This comparison changed both the audio source and the available lead-in, so it cannot assign the error to the sample rate alone.
+
+On crowded source 2, Sean initially heard something like `かいます かいますから` and “ooke.” After replaying the original stereo soundtrack at 8–20 s he heard `つかいます つかいますから`, confirming Whisper’s opening phrase on the isolated audio. He did not give a revised reading for the ending.
+
+On crowded source 1, Sean judged `わたしたちが いま ここにいる かくりつ` correct. Two earlier sounds were harder to hear. On the separated waveform he heard something like “sawakune” for Whisper’s `さわぐなら` and “danzou” for `だんぼう`. On the original 44.1 kHz stereo passage he confirmed `その ていどの ぐうぜんを`. The following verb remains open. After `うちゅうの` he heard mumbling resembling “danjou” or “danchou” and could not choose a word. The mix decode’s `たんじょう`, the full-source decode’s `ざんぞう` and the short-source decode’s `だんぼう` remain competing machine readings. None is listener-verified in that position.
+
+The 8 kHz mixture of the natural interruption still yielded a pressure-related candidate that neither isolated crop returned. Subtitles need a way to retain and compare the original and source hypotheses even where an editor finds a separated voice clearer. Exact-window JSON and logs are under `$d/sepformer/asr-windows`.
+
 ## Consequence for the Python architecture
 
 Keep the original mixture, voice-activity intervals, estimated source audio and ASR hypotheses independently addressable on the media timeline. For each waveform store the producing model and revision, recording-local voice ID, original time offset, sample rate, and any trimming, padding or measured delay. Preserve the mixed-audio transcript alongside per-source hypotheses. An editor can replay a disputed phrase in the mix and in each candidate source without losing the other speaker's onset.
