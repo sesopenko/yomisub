@@ -2,7 +2,7 @@
 
 **Feasibility study · 19 November 2026**
 
-The follow-up tested source separation and target-speaker extraction on the Radeon, including Whisper on individual waveforms, direct listening on S01E10 and season-scale timing. [GPU speaker-separation findings](speaker-separation-findings.md)
+In the Radeon follow-up, Sean heard SepFormer isolate one intelligible voice in the S01E10 interruption and the babbling voice in the many-speaker excerpt. Whisper’s timings on the latter still stretched a repeated phrase across most of the clip. The separation report includes the individual listening judgments, the bandwidth comparison and the GPU timings. [SepFormer results](speaker-separation-findings.md#sepformer-on-the-two-s01e10-overlaps)
 
 **Build the first version around a full-context transcript and a separate timeline of voices.** They answer different questions. Whisper proposes what was said. A diarizer marks when voices are active and which stretches sound alike. On the real S01E10 interruption, the diarizer found **two voices at 26.221–26.744 s**. Different Whisper views recovered candidate words for both, but neither their ownership nor their individual boundaries followed reliably from the scan. On the many-speaker example, four voice clusters yielded only 136 ms of detected coactivity across the file. In the same-onset control, where both inputs are known, the diarizer marked **3.341 s of coactivity** and Whisper returned only one speaker’s line. Keep detected overlap as durable metadata and emit two simultaneous subtitles only when each has a supported text, owner and interval.
 
