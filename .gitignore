@@ -175,3 +175,6 @@ cython_debug/
 
 # ide ignores
 .idea
+
+# test files to ensure aren't in version control to ensure copyright isn't borken
+gitignored-inputs
