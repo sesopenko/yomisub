@@ -1,0 +1,176 @@
+# Can Yomisub follow Japanese speech as it happens?
+
+**Feasibility study · 19 November 2026**
+
+The follow-up tested source separation and target-speaker extraction on the Radeon, including Whisper on individual waveforms, direct listening on S01E10 and season-scale timing. [GPU speaker-separation findings](speaker-separation-findings.md)
+
+**Build the first version around a full-context transcript and a separate timeline of voices.** They answer different questions. Whisper proposes what was said. A diarizer marks when voices are active and which stretches sound alike. On the real S01E10 interruption, the diarizer found **two voices at 26.221–26.744 s**. Different Whisper views recovered candidate words for both, but neither their ownership nor their individual boundaries followed reliably from the scan. On the many-speaker example, four voice clusters yielded only 136 ms of detected coactivity across the file. In the same-onset control, where both inputs are known, the diarizer marked **3.341 s of coactivity** and Whisper returned only one speaker’s line. Keep detected overlap as durable metadata and emit two simultaneous subtitles only when each has a supported text, owner and interval.
+
+This study starts from the editorial decisions in the [Japanese subtitling guide](japanese-subtitling-craft-for-yomisub.md). We extracted new audio from all five MP4s, including the two S01E10 overlap examples, ran both models again, and analyzed their outputs together. We also changed the input experimentally: transcribed individual voice turns, placed two known excerpts in sequence and in overlap, and tested a two-line display. Sean’s listening observations are identified below. They establish particular events and voices, not a frame-accurate reference transcript.
+
+## When two people speak at once
+
+**Evaluate the interval containing both voices, the words spoken by each, and the correspondence between each text and its voice independently.** Getting the interval right is valuable even when the software must abstain on ownership. Source audio already separated by speaker, a verified text/voice annotation or a validated separation method could supply the missing piece. A voice label alone cannot reconstruct a source waveform.
+
+### Natural interruption · S01E10, approximately 25–28 s
+
+Sean heard two people speaking together here. The automatic voice track assigns `SPEAKER_02` to 25.647–27.757 s and `SPEAKER_00` to 26.221–26.744 s. Both IDs are active for **523 ms**. A separate overlap-only pass with the same segmentation weights marked 26.238–26.710 s. These methods agree on the middle of the exchange. Sean’s approximate review window does not establish three continuous seconds of overlap or either model’s exact boundary error.
+
+The default medium full-file decode printed `誰かいるのか?` for 26–28 s. Its interval intersects voice 02 for 1.757 s and voice 00 for 0.766 s. It is fully covered by at least one voice, with both present for part of it. Awarding the text to the longest intersection would produce a clean-looking label while losing the distinction the viewer hears. Changing model to large-v3-turbo put `待って 待って 待って` at 25.520–26.560 s, `圧力に屈しない` at 26.720–27.560 s and the question at 27.720–28.520 s. Its more plausible-looking sequence still contains no separate simultaneous text lanes.
+
+| Another view of the same audio | Output evidence | Consequence |
+| --- | --- | --- |
+| Isolate the left or right channel before full-file ASR | Left returned sequential question/reply candidates. Right put `待って待って待って` and a variant of `圧力に屈しない` together within **one** 26.000–27.860 s segment. Channel correlation was 0.944 over Sean’s marked window and the channel energy difference was 0.069 dB. | A second channel can expose wording worth reviewing. Neither channel is a verified speaker stem, and printed dashes do not identify the owners. |
+| Transcribe the short `00` turn alone | The 523 ms crop yielded a mother-related label and different text. With 250 ms of context at each edge it yielded `まってまってまって`. | The recovered words depend on context. The padding introduces audio from the concurrent speaker and has to stay out of any automatic timing expansion. |
+| Transcribe the longer `02` turn | The unpadded 2.110 s crop included variants of **both** phrases. Adding 250 ms at each edge again produced both, this time as two quotations in one segment. | The longer voice window contains the shorter speaker. Assigning both quotations to `02` or assigning duplicate text to two lanes would actively mislead the learner. |
+
+The defensible output is a **reviewable overlap event with two voice IDs, two candidate phrases and competing time/ownership evidence**. A listener can accept a mapping without retyping the whole exchange. Only the dual speech itself was established by the initial time mark. Agreement between the right channel, the local crop and turbo improves the case for retaining a phrase as a candidate; those decodes all used the same soundtrack.
+
+### Sustained background voice · S01E10-multi-speakers
+
+Sean supplied this separate 33.019 s clip because several people interject and one voice keeps babbling under the others for roughly ten seconds. Pyannote found four clip-local clusters and twelve turns. It did record `01` continuously from **9.059 to 18.863 s**, but a long single-voice interval is insufficient evidence that it followed the babbler and all the interruptions. The only two-ID spans anywhere in the recording were **19.673–19.792 s** (119 ms) and **24.297–24.314 s** (17 ms). The overlap-only pass found the first span alone. The roughly ten seconds describes a continuing voice, not ten seconds of continuously overlapping speech. These observations provide no denominator for an overlap recall percentage.
+
+Medium and turbo both produced one ordered series of candidate utterances: an extended explanation, a short interjection and subsequent instructions. The default 22–25 s segment intersects three voice IDs over its duration, with just 17 ms where two different IDs are simultaneously active. Three intersecting labels do not imply three concurrent lines. A cue planner should preserve the continuing voice as a separate, potentially unresolved record and allow a human to supply the words still audible under a foreground line. Collecting every ASR segment in chronological order would never surface that loss.
+
+We decoded the full left and right channels independently. Both retained a similar single sequence through the extended explanation, and neither gave it a verified second text lane. We also decoded the stereo difference signal, (left − right) / 2, which can cancel center-panned speech. It yielded two background-music annotations and no words. Simple channel subtraction did not recover a usable isolated speaker here.
+
+The segmentation model inside this pipeline represents up to three local speakers per 10 s window, with explicit classes for at most **two active speakers per frame**. Embeddings and clustering can yield more than three *recording-wide* IDs. The segmentation vocabulary has no class for three people speaking at once. Preserve any externally supported third voice in the data model even when the automatic provider cannot represent it. [Segmentation model specification](https://huggingface.co/pyannote/segmentation-3.0#-powerset-speaker-segmentation)
+
+### Controlled interruption and simultaneous onset
+
+We built two-source controls from the newly detected S01E01 intervals 13.143–16.518 s (A, 3.375 s) and 32.195–38.523 s (B, 6.328 s). Each is a clip of the original soundtrack including its background. We know exactly when their **waveforms** coexist. Internal breaths and pauses mean that waveform overlap is an approximate reference for continuous *speech* overlap. Both excerpts used the same half gain. The staged controls placed solo A at 0.500 s and solo B at 5.000 s in a 24 s file. A repeated at 13.000 s. B repeated at 17.000 s for alternation and 14.000 s for interruption. Two additional nine-second controls contained only the mixed presentation with no solo copies. A second ASR checkpoint, large-v3-turbo, also returned a single B-like line in the same-onset control.
+
+| Controlled input | Known waveform overlap (s) | Predicted two-voice interval (s) | Japanese text outcome |
+| --- | --- | --- | --- |
+| Staged alternation | None | None | Both phrases appeared in their original order twice. The detector still produced three cluster IDs from two excerpts. |
+| Staged interruption | 14.000–16.375 | 14.273–16.332 | Both phrases appeared sequentially. B’s cue started while the two waveforms were already overlapping. |
+| First exposure, staggered | 1.500–3.875 | 1.752–3.845 | Two sequential segments. A’s wording changed and the beginning of B’s solo reference was missing; B’s text appeared at 4.000 s. |
+| First exposure, simultaneous onset | 0.500–3.875 | 0.537–3.878 | A single 0–6.760 s segment corresponded to B. A’s independently recognized phrase about the king and square was absent. |
+
+
+In the staged mix, the first solo A received cluster `01` and its identical repetition received `02`. B retained `00`. The mixed whole-file transcript reproduced the two phrases in sequence; its B segment began at 15.960 s, **1.960 s after the B waveform entered**. The paired serial control also recognized both phrases. The whole-file result preserves useful words, but a subtitle writer following its segments would postpone B rather than show the interruption.
+
+We also transcribed each detected interval of that overlap independently. The `00` crop began at 14.273 s, when both waveforms were present. Its first text concerned A’s `僕たちの肖像`, followed by B’s phrase about `ただ酒`. Assigning the entire crop to B would explicitly misattribute A’s words. The other crop changed the Japanese wording of A’s line. The solo crops provide a useful comparison without proving an exact transcript. These are recognition runs on the actual mixed samples, not simulated diarization errors.
+
+**Display once both texts are known.** A small render test used the staged mix’s known placements and two short Japanese labels on a blank 640 × 360 canvas. With two independently positioned ASS events, the upper line alone appeared at 13 s, both at 15 s, and only the lower at 17 s. At 21 s both were clear. In FFmpeg/libass the continuing line’s pixels were identical across each transition. This directly tests stable placement when the inputs are known. Plain SRT can encode the same successive text states in one cue per interval; exact vertical placement remains player-dependent.
+
+For an unreviewed overlap with only one recoverable line, keep that line on its supported interval, retain the other voice event and flag its missing or ambiguous words. If even ownership of the recovered line is unclear, leave the owner open. A third voice or a brief backchannel can share the same timeline. Handle excess screen space as a layout conflict, with the intelligible text and its original times retained.
+
+## Feasibility against the editorial brief
+
+| What the learner needs | What Yomisub can deliver | Where the evidence runs out |
+| --- | --- | --- |
+| The current phrase appears near its speech and clears with it (§§3–4) | Anchor each phrase independently on the recording clock. Validate segment, token and voice intervals. Leave gaps unfilled and keep high reading demand as a diagnostic. | A plausible segment can have impossible internal times. Voice activity supplies neither individual word edges nor a reason to extend a line. |
+| Recurrent voices, ordinary turns and interruptions stay distinguishable (§5) | Keep anonymous, clip-scoped voice IDs. Show a neutral label during ambiguity when there is corroboration. Multiple phrases may occupy the same time. | The scanner can merge different voices, split one voice across labels or fail to detect a voice. A character’s name, the owner of a masked word and continuity across episodes require additional evidence. |
+| The two voices in an overlap are readable as they speak (§§3, 5) | If both texts, owners and times are available, render independent lanes and advance each at its own boundaries. The controlled test below exercises entry, coexistence and clearance. | A single mixed recording can yield a good overlap interval but only one usable text stream. Cropping an active interval still leaves both voices in that audio. Preserve the unresolved part for review. |
+| Japanese reads in meaningful units without anticipating a reply or late ending (§§6–8) | Recover exact string slices with Sudachi, group particles and predicate endings, and choose line breaks independently of cue changes. Keep spoken contractions, repetitions and politeness. | Morphological boundaries are numerous. A grammatical cut needs separate timing evidence to become a cue cut. Spelling, punctuation, names and furigana can require listening or a verified glossary. |
+| A short response, chorus or sound is faithfully represented (§§5, 9–10) | Retain short source candidates and record whether each has text, voice activity and human support. Keep lyrics, dialogue and descriptions distinguishable when their role is known. | A gap in both recognition streams can contain singing. Laughter can attract a voice ID, and an ASR caption can supply an unsupported sound source. A confident lexical prediction cannot verify a sound description. |
+| The display stays legible and faithful to the scene (§§2, 4–5, 11–13) | Measure exposure and combined reading load, prefer coherent wraps and stable lanes, and report crowding. Preserve unresolved speech and three-way conflicts in the timeline. | Learner comprehension, plot importance, the identity of an off-screen voice, scene changes, sign/face obstruction and whether a label spoils a reveal need human or visual evidence. These clips cannot establish an ideal reading speed. |
+
+## Findings on the original recordings
+
+### Calm dialogue · S01E01
+
+At 39 s, Whisper’s full-context text was `生草ゴーズ` over **39.160–40.560 s**. The voice track put `SPEAKER_01` at **39.265–40.531 s**. Their intersection is 1.266 s out of a 1.400 s ASR segment. The same clip-local label occurs at 25.242–26.643 s and 26.980–30.187 s. **Sean confirmed that the person speaking at 25–30 s is the one saying something like “namaguso bosu” at 39–40 s.** That is direct evidence for carrying a voice association across a pause and another person’s turn. The lexical spelling is still open. Preserve the human phonetic note separately from the recognized Japanese.
+
+The following ASR segment is laughter. Two voice labels intersect it, **in succession**, for 355 ms and 2,818 ms. A list of two labels on one ASR segment would lose this distinction. Sean heard the preceding utterance as the laughter began. The machine tracks supply no simultaneous interval here. Give review access to those particular boundaries without manufacturing a second line or a precise overlap.
+
+The opening exposes another failure of assigning a single speaker to every segment. Whisper’s `[音楽]` spans 0–12.920 s and intersects a voice cluster for 2.076 s at 7.658–9.734 s. Sean heard fireworks around 2 s, laughter ending around 10 s, conversation starting around 12 s and instrumentals throughout. The temporal intersection is real, yet the cluster did not *say* “music.” An independent voice scan retains an event that a transcript-only view would bury. The association between a text and an owner must be optional.
+
+Across all ten S01E01 turn crops, nine produced text and the 28 ms of audio available in the last turn produced none. Cropping the opening laughter yielded a description specifying children, a detail the listening reference did not establish. The recurring 39 s voice still produced the same uncertain spelling when isolated. One 6.328 s crop produced a segment ending at 7.960 s. Keep cropped decodes as local alternatives with their coordinate origin and actual audio length.
+
+### Theme song · S01E02
+
+The full-context transcript has a 10.000 s gap from 19.360 to 29.360 s. Sean heard an instrumental break there. At the other end of the same song he heard the lead stop around 78 s and a background chorus continue. The last detected voice interval ends at 78.297 s. Whisper’s last lyric-like line ends at 78.000 s. Its only later segment is `(ED)` at 88.120–90.120 s, beyond the 88.992 s audio. A fresh decode of just 78.000 s to the end returned a music symbol. None of those outputs supplies the chorus’s words.
+
+The scanner produced five anonymous clusters and 24 intervals, including 17 ms label changes. Four transcript segments intersected more than one cluster, yet the scanner reported no simultaneous clusters. Counting labels would imply singers that have never been verified. In dialogue mode, avoid projecting those labels as characters. In a song-learning profile, retain lyric candidates, preserve the confirmed break and mark the untranscribed chorus for review. The absence of recognition has two different explanations even within this clip.
+
+### Fight · S01E03
+
+Sean put the first clear sentence at about 15 s, after a bassy sound, blasts and the entrance of dramatic music. Whisper proposed an isolated `ん` at the opening, with no intersecting voice turn. For the first full sentence, Whisper’s 15.480 s start and pyannote’s 15.505 s start closely agree with Sean. The voice interval ends at 17.547 s, while the ASR segment runs to 19.480 s. Nine token intervals inside that sentence run backward. For example, `防` has `from=15480, to=2970` ms. Use the onset agreement; reject the invalid internal edges. Neither stream establishes the precise end of every word.
+
+**The test that matters for attribution is the short exchange at 44–50 s.** Sean heard A say `こうします`, then B say `そう` and `耐えられる`. The default decode put the first two in one segment. The diarizer found two clusters in the clip as a whole, but used the *same* cluster for all three bursts below. Sean supplied the word ownership. The exact onset and degree of overlap in this exchange were not marked.
+
+| Phrase | Human owner | Raw voice interval | What a time join would infer |
+| --- | --- | --- | --- |
+| `こうします` | A | `00`, 44.851–45.391 s | One candidate cluster intersects the beginning. |
+| `そう` | B | `00`, 45.998–46.285 s, in the same coarse ASR segment | A whole-segment join gives both utterances the same candidate. The actual ASR piece ` そう` runs 46.670–47.990 s and intersects **no** turn. |
+| `耐えられる` | B | `00`, 48.108–48.817 s | A candidate intersects part of the predicate. Word-to-word continuity comes from the listener here. |
+
+The fresh DTW run returned all three as separate text segments, in the order Sean heard. Its `そう` attention point is 47.320 s, also outside the corresponding voice activity. Cropping the original audio to 42.500–51.000 s and decoding again produced a generic end-of-video sign-off in place of the exchange. Splitting the text, cutting the audio and attributing the words have different success conditions. Keep the human A/B/B assignment as a scoped correction with its source and preserve the machine proposal beside it.
+
+## What the full-file joins support
+
+| Measured on the default full-context run | Dialogue | Song | Fight | S01E10 | S01E10 multi |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Audio duration (s) | 43.968 | 88.992 | 62.976 | 29.989 | 33.019 |
+| ASR segments / voice turns / voice clusters | 9 / 10 / 4 | 16 / 24 / 5 | 10 / 12 / 2 | 15 / 15 / 3 | 14 / 12 / 4 |
+| ASR segments intersecting zero / one / multiple voice IDs | 0 / 8 / 1 | 1 / 11 / 4 | 2 / 8 / 0 | 1 / 10 / 4 | 0 / 10 / 4 |
+| ASR text pieces / unusable piece intervals | 110 / 4 | 214 / 18 | 58 / 14 | 109 / 15 | 142 / 3 |
+| Sudachi surfaces / surfaces with independently bounded intervals¹ | 83 / 61 | 164 / 112 | 49 / 25 | 84 / 60 | 104 / 93 |
+| Internal Sudachi cuts with usable adjacent anchors / all internal cuts² | 57 / 74 | 103 / 148 | 22 / 39 | 50 / 69 | 83 / 90 |
+
+¹ A surface exactly spans one or more whole ASR pieces, each with a positive, ordered interval inside both segment and audio. ² A cut must coincide with an ASR piece edge whose two neighboring intervals pass the same bounds test and do not cross. Counts include punctuation and spaces and exclude model control tokens. These measure **availability**, not timing accuracy, grammatical quality or speaker accuracy. On S01E01–03, the scan returned zero duration with two distinct machine labels simultaneously active. The mixed controls supply the known waveform intervals used above.
+
+The join retains the original Unicode text, intersects half-open source-time intervals and sums the **union** of milliseconds per voice. It also records uncovered time and actual simultaneous activity. Two labels encountered successively are different from two active at one instant. For example, a 46.670–47.990 s span with missing speaker support stays unassigned even if its neighbors have confident-looking labels.
+
+## What each Whisper field can contribute
+
+The tested executable is whisper.cpp. It consumes 16 kHz audio, creates log-Mel features (80 bands for medium, 25 ms analysis window, 10 ms hop), encodes nominal 30-second windows and autoregressively decodes multilingual text pieces and timestamp tokens with language/task context. Segment timestamps are derived from this sequence on a nominal 20 ms grid. Full-JSON piece intervals add timestamp candidates, interpolation based on estimated voice lengths and energy-based edge adjustments. DTW follows cross-attention to yield token **points**. None of those operations clusters actors. [Whisper architecture](https://github.com/openai/whisper#approach) · [Pinned decoder and token timing](https://github.com/ggml-org/whisper.cpp/blob/231638a0717b7822784297e5980965ffcec05810/src/whisper.cpp#L8790)
+
+| Option or field | Operational contract |
+| --- | --- |
+| `-m`, `-l ja`, `-f`, `-of` | Use the multilingual checkpoint, explicit Japanese transcription, selected audio and unique output stem. `-tr` switches to translation. Preserve language, model hash, build, backend, options and source track in the run record. |
+| `-oj` and `-ojf` | Both write `.json`. Ordinary JSON contains segment text, offsets, formatted timestamps and partial model/run metadata. Full JSON enables token timing and adds `tokens[]` with surface, ID, lexical probability `p`, optional offsets and `t_dtw`. Filter control tokens using the model vocabulary. This writer can join adjacent decoder bytes to complete a UTF-8 character. `p` estimates text choice; it carries no voice or boundary confidence. |
+| `-osrt -ovtt -ocsv -otxt` | In the full-file runs these are alternate serializations of the same recognition output. SRT and VTT expose segment intervals, CSV exposes millisecond boundaries, and TXT retains the segment text. None contains the independently computed speaker track. |
+| `-dtw medium -nfa -ojf` | Use a checkpoint-matched preset and turn flash attention off. Check `dtw = 1` in stderr. JSON `offsets` are milliseconds. A nonnegative `t_dtw` is in 10 ms ticks, e.g. `4732` means 47.320 s; `-1` means unavailable. A point has no duration. This profile can change recognized words and segmentation, so join it to its own transcript. The comparison does not isolate the effect of disabling flash attention. |
+| `-ml`, `-sow`, `-wt` | A positive max length enables token timing and wrapping. `-sow` looks for space-prefixed tokens, which supplies few linguistic cues in Japanese. `-wt` controls a timestamp-probability threshold. Use unwrapped text for lexical joining. |
+| `-bs`, `-bo`, `-tp`, `-tpi`, `-nf`, `-et`, `-lpt`, `-nth` | Beam search, candidate count, temperature/fallback and decoder/no-speech thresholds can change text or suppress an entire window. The tested defaults included beam/best-of 5, temperature 0, increment 0.2 and no-speech threshold 0.6. Treat these as recognition settings. None verifies a short response or justifies deleting one. |
+| `-di`, `-tdrz`, `--vad` | The CLI’s stereo label is a per-segment comparison of left/right channel energy. TinyDiarize needs compatible weights and can mark a *next turn*. VAD gates on likely speech with configurable duration/padding. The independent pyannote scan used here consumes mono audio and returns anonymous activity intervals, which may overlap. These are distinct capabilities. |
+| `-ot`, `-d`, `-t`, `-p`, `-ng` | Offset and duration use milliseconds. The turn experiments physically cut PCM by sample index so their origins and lengths are known exactly. Threads, processor partitioning and backend belong in the manifest. All inference here used the AMD CPU. |
+
+Defaults and writer details refer to the locally inspected source revision. The study ran both full-JSON profiles on all five files. All 64 default segments matched across JSON, SRT, VTT, CSV and plain text on the fields each format carries; the alternate DTW decodes contained 68 segments total. The other switches above describe available controls. [CLI flags and JSON writer](https://github.com/ggml-org/whisper.cpp/blob/231638a0717b7822784297e5980965ffcec05810/examples/cli/cli.cpp) · [pyannote 3.1 model and output](https://huggingface.co/pyannote/speaker-diarization-3.1)
+
+## Python architecture and implementation order
+
+Keep three timelines on a common integer-millisecond source clock: recognized text, voice activity, and the display. A voice can exist without a recognized phrase. A phrase can have several proposed owners. Model those facts before building a list of SRT cues.
+
+| Component | Records and responsibility |
+| --- | --- |
+| `media.py` and `generation.py` | Probe the selected track and retain stream index, audio ordinal, channel layout, media start, PCM length and sample-to-media mapping. Provide the same clock to Whisper and the diarizer. Run either analysis first. Join only when both results exist. Preserve original channels for future inputs with genuinely separate voices. |
+| `whisper.py` | Return structured segments and text pieces with run IDs, original text, character spans, raw times, optional DTW point and validity reasons. Keep partial, contradictory or out-of-bounds observations for inspection. Export no timing beyond available media. |
+| New `speakers.py` | Publish raw `VoiceTurn(recording, run, voice_id, start, end)` plus every span with two or more simultaneously active IDs. IDs are local to a run and recording. For each candidate phrase, retain milliseconds per voice, uncovered duration, simultaneous duration and evidence links. An automatic link and a listener-confirmed link must remain distinguishable. An overlap event survives even when it has zero matched words. |
+| New `japanese.py` | Return exact original surface slices and protected constructions. Port Sudachi mode C from `origin/v2` as a pure text operation. The old function indexes a list by the length of each surface and takes the first record’s speaker. Whisper pieces can contain several characters or a leading space. Walk character offsets and intersect ranges, check reconstruction, and allow a surface with missing time or mixed owners. |
+| New `spotting.py` | Propose contiguous text spans bounded by good linguistic breaks. Accept a timed split only when usable acoustic evidence exists at that cut. Preserve independent in/out times for each voice. Prefer complete clauses, retain particles with their phrase and negatives, politeness, conditions and corrections with their predicates. Return a review reason when the only safe output is one provisional segment. |
+| New `layout.py` and existing `subtitles.py` | Sweep sorted starts and ends and emit the active phrases for each half-open interval. An already-visible voice keeps its lane while another starts or ends. Use a neutral label where supported. Lay out lines within the chosen intervals and check Japanese opening/closing punctuation. Encode SRT as nonoverlapping display states and support a positioned renderer for stable lanes. Preserve atomic publication of `<stem>.<language>.srt`. |
+
+**Overlap is a first-class input to spotting.** If two voices coincide, keep one record for their acoustic overlap and independent records for each phrase with evidence linking text to a voice. Input may be a verified human annotation, separate audio tracks/stems, or competing ASR/diarization hypotheses. The latter need review when they disagree. A useful editor can play the region, show both proposed lanes and let a listener correct just ownership, just wording or just boundaries. Preserve the original readings and record the scope of each correction. Once the two lines have sufficient evidence, put the second on screen at its own onset; remove each with its own end. A third intelligible line produces a visible overflow or review event, while all three survive in the internal timeline.
+
+**A linguistic boundary is only a candidate.** On the guide’s `それはできない。`, Sudachi returned `それ / は / でき / ない / 。`. On `もう食べちゃった。` it returned `もう / 食べ / ちゃっ / た / 。`. A phrase planner should keep `できない` and `食べちゃった` intact. A line wrap can use an appropriate surface boundary without inventing a timestamp. If a word is split by the decoder, or an ending is delayed by a meaningful pause, look for acoustic support before showing the ending. Otherwise keep the wider phrase provisional. Reading speed can flag density, including both lines and labels during overlap; it must never schedule a later reply behind an earlier cue.
+
+**Recover the earlier work selectively.** The older Python GUI transcribed and aligned audio, ran `DiarizationPipeline`, then called `assign_word_speakers`. The fresh tests ran its underlying pyannote pipeline directly and joined native whisper.cpp evidence in Python; they do not measure WhisperX forced alignment. Current `main` requests raw SRT and applies `min(end + 0.5 s, start + 6 s)` during publication. That rule can create an apparent overlap or erase ongoing words. Replace it with the evidence-based spotter and keep the writer focused on serialization. [Current media and extraction](../yomisub/media.py) · [ASR adapter](../yomisub/whisper.py) · [SRT writer](../yomisub/subtitles.py) · [Older voice scan](https://github.com/sesopenko/yomisub/blob/8ab562e92647b7c370dd51f6b28fddba5c0999da/yomisub.py#L346) · [Older Sudachi tokenizer](https://github.com/sesopenko/yomisub/blob/8ab562e92647b7c370dd51f6b28fddba5c0999da/subtitles/tokenization.py)
+
+### Acceptance cases for a build agent
+
+1. **Diarization and ingestion.** Persist both independent evidence streams. Validate empty results, invalid token intervals, nonzero media start, an event crossing the end of a clip, recurring voice IDs and a raw overlap with no aligned text. Resolve the exact same input and policy to the same result on replay.
+2. **Attribution and phrases.** Preserve text exactly across accepted cuts. Use the S01E10 25–28 s exchange and the sustained babble in S01E10-multi as the primary real-scene review cases. Use the S01E01 confirmed recurrence as a positive ownership check and the S01E03 A/B/B exchange as a counterexample to always choosing the longest-intersecting voice. Include a short backchannel, late negation, a clause split with no usable timestamp and a music label intersecting a voice.
+3. **Overlap recognition.** Score active-voice detection, recovered text **per speaker**, ownership and onset/end error separately. A system that detects two voices but recovers one line has only passed detection. Include same-onset and staggered starts, alternation, a sustained interruption and three-way crowding. Never count a duplicated mixed transcript in two lanes as a recovery.
+4. **Rendering and human replay.** For known intervals verify A only → A+B → B only → clear, unchanged continuing lane positions, ordered text across rapid turns, and absence of reading-time backlog. Review complete exchanges at normal playback speed. Report unverifiable timing and names rather than scoring them as correct. This study measures input feasibility and selected render behavior. It does not measure learner comprehension or establish episode-wide accuracy.
+
+## Experiment record
+
+The examples were processed locally on 19 November 2026. All five selected audio streams are Japanese-tagged stereo with presentation start zero. S01E01–03 are 48 kHz and both S01E10 clips are 44.1 kHz. FFmpeg 7.1.5 decoded `0:a:0` to 16 kHz mono PCM16. Hardware was the AMD Ryzen CPU. Whisper used the cached multilingual medium model (SHA-256 `6c14d5adee5f86394037b4e4e8b59f1673b6cee10e3cf0b11bbdbee79c156208`), whisper.cpp `1.9.5-dev`, adjacent source `231638a0`. Pyannote used `speaker-diarization-3.1` revision `84fd2591`, segmentation `e66f3d3b` and WeSpeaker `837717dd`, with no speaker count supplied. Additional S01E10 and controlled comparisons used large-v3-turbo (SHA-256 `1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69`). The overlap-only detector reused segmentation-3.0 with both minimum durations set to zero. The isolated research environment used Python 3.12, pyannote.audio 3.3.2, CPU torch/torchaudio 2.6.0, SudachiPy 0.7.0 and SudachiDict-core 20261015. No editorial language model participated.
+
+To repeat the full-file comparison for a given `clip`, `model` and scratch `stem`, use the following options:
+
+~~~bash
+ffmpeg -nostdin -v error -i "$clip" -map 0:a:0 -ac 1 -ar 16000 -c:a pcm_s16le "$stem.wav"
+whisper-cli -ng -t 4 -m "$model" -l ja -f "$stem.wav" \
+    -ojf -osrt -ovtt -ocsv -otxt -of "$stem-full"
+whisper-cli -ng -t 4 -m "$model" -l ja -f "$stem.wav" \
+    -nfa -dtw medium -ojf -of "$stem-dtw"
+~~~
+
+Feed the same normalized mono samples to `Pipeline.from_pretrained("pyannote/speaker-diarization-3.1")` with a recording ID, then iterate `annotation.itertracks(yield_label=True)` before assigning any words. Use `write_rttm` for the raw exchange format. Its onset and **duration** use seconds and independent formatting can differ by 1 ms from separately rounded endpoints. The [raw natural-clip turns](whisper-example-speaker-turns.rttm) preserve this run’s annotations. For the ten S01E01 turn probes, we cut PCM at the separately rounded turn boundaries, with no padding, and transcribed each cut at three threads. A matched three-thread full-clip reference produced the same full transcription array as the four-thread primary run. Each distinct file was decoded independently; the mix controls, fight excerpt and chorus excerpt used the same three-thread settings.
+
+On this checkout the matching machine-readable evidence is under `gitignored-inputs/whisper-feasibility-2026-11-19/`. It contains the fresh Whisper outputs, diarization intervals, exact text-to-voice joins, probe materials and comparison scripts. This keeps local transcripts alongside the supplied examples while the findings and voice interval fixture remain reviewable in the repository. The sample is small, the manual marks are selective, and the controlled overlays retain background audio. Treat measured results as regression cases for this material.
