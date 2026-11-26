@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P20](tasks/P20.md).** 108 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P21](tasks/P21.md).** 111 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -24,7 +24,7 @@
 | P17 | 8 | Complete | Evidence bundle and offline replay |
 | P18 | 5 | Complete | Recoverable publication |
 | P19 | 5 | Complete | Production generation workflow |
-| P20 | 3 | Pending | GTK workflow and user documentation |
+| P20 | 3 | Complete | GTK workflow and user documentation |
 | P21 | 8 | Pending | Paired accuracy and hardware acceptance |
 
 ## Completion record
@@ -221,6 +221,12 @@ Commit subject is `P18 Recover interrupted subtitle publication under a destinat
 Two `test_production.py` integration tests exercised the actual generation factory, planner, ZIP and publisher with controlled model operations. Repeated generation and optional retry failure retained the baseline on simulated single and split devices. Missing speaker setup stopped before audio and ASR. A scan crash removed temporary media and preserved the previous SRT. Whisper run records now measure model subprocess wall time. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (82 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P19 Compose the production generation workflow and model providers`.
+
+### P20 — Connect GTK to speaker-aware generation and evidence review
+
+Two focused `test_presenter.py` tests and the suite passed. GTK on an isolated X display showed actionable missing-worker instructions, restored the Generate button and succeeded on retry with the actual AMD worker. A 14 s two-track video selected Japanese audio ordinal 1 and tiny. The GTK result showed three paths and two distinct findings matching the saved bundle. Widget updates ran on the main thread. [GTK screenshot](../subtitle-generation.png). `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (84 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P20 Connect GTK to speaker-aware generation and evidence review`.
 
 ## Updating this ledger
 

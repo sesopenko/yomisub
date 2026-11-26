@@ -5,10 +5,10 @@ from pathlib import Path
 import gi
 
 from .models import DEFAULT_MODEL, MODELS
-from .workflow import format_track_label, make_generation_request, run_generation
+from .presenter import run_job, selected_request
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import GLib, Gtk
+from gi.repository import GLib, Gtk, Pango
 
 
 class SubtitleApp(Gtk.Window):
@@ -18,7 +18,7 @@ class SubtitleApp(Gtk.Window):
         self.generate_subtitles = generate_subtitles
         self.audio_tracks = []
         self.set_border_width(10)
-        self.set_default_size(400, 100)
+        self.set_default_size(540, 300)
 
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.add(vbox)
@@ -51,11 +51,20 @@ class SubtitleApp(Gtk.Window):
 
         self.model_buttons[DEFAULT_MODEL].set_active(True)
 
+        self.stems = Gtk.CheckButton(label="Analyze separated voices in overlaps")
+        self.stems.set_tooltip_text("Save two listening stems and transcribe each eligible two-voice excerpt.")
+        vbox.pack_start(self.stems, False, False, 0)
+
         self.button = Gtk.Button(label="Generate Subtitles")
         self.button.connect("clicked", self.on_generate_clicked)
         vbox.pack_start(self.button, True, True, 0)
 
         self.status_label = Gtk.Label(label="")
+        self.status_label.set_line_wrap(True)
+        self.status_label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        self.status_label.set_max_width_chars(65)
+        self.status_label.set_selectable(True)
+        self.status_label.set_xalign(0)
         vbox.pack_start(self.status_label, True, True, 0)
 
     def get_selected_model(self):
@@ -76,7 +85,7 @@ class SubtitleApp(Gtk.Window):
         try:
             self.audio_tracks = self.probe_audio_tracks(Path(filepath))
             for track in self.audio_tracks:
-                self.audio_track_combo.append_text(format_track_label(track))
+                self.audio_track_combo.append_text(f"Track {track.index} ({track.language}, {track.channel_layout})")
 
             if self.audio_tracks:
                 self.audio_track_combo.set_active(0)
@@ -104,11 +113,12 @@ class SubtitleApp(Gtk.Window):
             return
 
         try:
-            request = make_generation_request(
+            request = selected_request(
                 Path(filepath),
                 self.audio_tracks,
                 self.audio_track_combo.get_active(),
                 self.get_selected_model(),
+                self.stems.get_active(),
             )
         except ValueError as error:
             self._show_error_dialog(str(error))
@@ -119,7 +129,7 @@ class SubtitleApp(Gtk.Window):
         threading.Thread(target=self._run_subtitle_generation, args=(request,)).start()
 
     def _run_subtitle_generation(self, request):
-        run_generation(
+        run_job(
             self.generate_subtitles,
             request,
             report_status=partial(GLib.idle_add, self.status_label.set_text),
@@ -138,4 +148,4 @@ class SubtitleApp(Gtk.Window):
         dialog.format_secondary_text(message)
         dialog.run()
         dialog.destroy()
-        self.status_label.set_text("An error occurred.")
+        self.status_label.set_text(message)

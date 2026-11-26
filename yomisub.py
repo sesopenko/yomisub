@@ -1,25 +1,21 @@
 # © 2025 Sean Esopenko
 # https://github.com/sesopenko/yomisub
 
-from functools import partial
-
-from yomisub.generation import generate_subtitles
+from yomisub.audio import FFmpegAudio
 from yomisub.gtk_app import Gtk, SubtitleApp
-from yomisub.media import extract_audio, probe_audio_tracks
-from yomisub.models import get_model_path
-from yomisub.subtitles import write_subtitles
-from yomisub.whisper import prepare_transcriber
+from yomisub.production import build_generator
+
+
+def generate(request, progress):
+    return build_generator()(request, progress)
+
+
+def create_window():
+    return SubtitleApp(FFmpegAudio().list_tracks, generate)
 
 
 def main():
-    generate = partial(
-        generate_subtitles,
-        extract_audio=extract_audio,
-        get_model_path=get_model_path,
-        prepare_transcriber=prepare_transcriber,
-        write_subtitles=write_subtitles,
-    )
-    window = SubtitleApp(probe_audio_tracks, generate)
+    window = create_window()
     window.connect("destroy", Gtk.main_quit)
     window.show_all()
     Gtk.main()
