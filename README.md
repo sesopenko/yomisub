@@ -110,3 +110,23 @@ are resolved separately by each provider when binding a stage.
 The AMD speaker worker has its own Python 3.12 environment. Follow the
 installation and model-access steps to check the diarizer on your selected
 GPU. [AMD worker setup](runtime/amd/README.md)
+
+### Offline evidence replay
+
+Open the bundle as a ZIP to inspect `manifest.json` and the indexed listening WAVs. The manifest records the exact recording clock, source ancestry, model runs, raw hypotheses, active voices, rejected readings, planned lanes and open findings. Replay uses its saved Japanese segmentation and works offline.
+
+```sh
+uv run --locked python -m yomisub.replay clip.ja.yomisub.zip review/
+uv run --locked python -m yomisub.replay clip.ja.yomisub.zip corrected/ --corrections edits.json
+```
+
+Replay writes SRT and ASS into a directory with unused destination filenames. Copy the manifest's `id` into `bundle` and copy a candidate or planned phrase ID into `target`. Listener timing uses integer samples on the recording clock. Each edit carries a unique ID and the listener who verified it.
+
+```json
+{"bundle":"<manifest id>","edits":[
+  {"id":"review-1","target":"<phrase id>","listener":"editor","field":"wording","value":"待って"},
+  {"id":"review-2","target":"<phrase id>","listener":"editor","field":"start","value":16000}
+]}
+```
+
+Other fields include `end`, `owner` (a neutral listener label or null), and `suppress`. A replacement displays as one phrase. To supply timed subdivisions, add a `parts` array with `text`, `start` and `end` for each piece of the replacement. A verified second line can use `field: "add"` with the turn ID as its target, text in `value`, `start`, `end`, and optional `owner`. An interval note uses `field: "note"`, its text in `value`, and both edges. The automatic bundle keeps its original evidence and wording.

@@ -70,7 +70,8 @@ def spot(evidence, decisions=()):
     groups = {g.segment_id:g for g in evidence.groups}
     edits = {}
     for d in decisions:
-        edits.setdefault(d.target_id,{})[d.field] = d
+        if d.field not in ("add", "note"):
+            edits.setdefault(d.target_id,{})[d.field] = d
     phrases = []
     findings = [*evidence.findings,*result.findings]
     clock = evidence.clock
@@ -126,12 +127,26 @@ def spot(evidence, decisions=()):
                                               candidate.evidence_ids,bounds))
                 continue
             text = part_fields["wording"].value if "wording" in part_fields else segment.text[a:b]
+            if "wording" in part_fields and part_fields["wording"].subdivisions:
+                decision = part_fields["wording"]
+                for i,part in enumerate(decision.subdivisions):
+                    speakers = ownership(evidence.scan,part.interval,None,source)
+                    who = owner_edit.value if owner_edit else speakers[0].voice if speakers else None
+                    phrases.append(PlannedPhrase(f"{id}:edit{i}",part.text,who,part.interval,
+                                                 (*candidate.evidence_ids,decision.id)))
+                continue
             if not text.strip():
                 continue
             support = [*candidate.evidence_ids]
             support += [p.id for p in pieces if p.id in valid and (p is pieces[0] or p is pieces[-1])]
-            support += [edit.id for edit in part_fields.values()]
+            support += [edit.id for field, edit in part_fields.items() if field not in ("start", "end")]
+            support += [edit.id for edit in (start_edit, end_edit) if edit is not None]
             if owners and owner:
                 support.extend(owners[0].evidence_ids)
             phrases.append(PlannedPhrase(id,text,owner,bounds,tuple(dict.fromkeys(support))))
+    for d in decisions:
+        if d.field == "add":
+            phrases.append(PlannedPhrase(d.id,d.value,d.voice,d.interval,(d.id,d.target_id)))
+        elif d.field == "note":
+            findings.append(ReviewFinding(d.id,d.value,(d.id,d.target_id),d.interval))
     return Spotted(tuple(phrases),result.candidates,tuple(findings))

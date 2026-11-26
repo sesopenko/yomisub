@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P17](tasks/P17.md).** 90 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P18](tasks/P18.md).** 98 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -21,7 +21,7 @@
 | P14 | 8 | Complete | Phrase onset, release and timed cuts |
 | P15 | 5 | Complete | Active phrases and stable speaker lanes |
 | P16 | 5 | Complete | SRT and ASS rendering |
-| P17 | 8 | Pending | Evidence bundle and offline replay |
+| P17 | 8 | Complete | Evidence bundle and offline replay |
 | P18 | 5 | Pending | Recoverable publication |
 | P19 | 5 | Pending | Production generation workflow |
 | P20 | 3 | Pending | GTK workflow and user documentation |
@@ -203,6 +203,12 @@ Commit subject is `P15 Lay out active phrases in stable speaker lanes`.
 Two focused `test_writers.py` tests parsed UTF-8 SRT and ASS, checked literal markup, shared boundaries, half-up rounding, duration clamps and unique collapse diagnostics. FFmpeg/libass rendered a 1280×720 three-voice example: all three Japanese phrases were readable and the continuing lane was pixel-identical before and after the other voice cleared (1248 bright pixels). The reviewed frame and ASS are at `gitignored-inputs/evaluation/layout/`. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (73 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P16 Render SRT screen states and independent ASS lanes`.
+
+### P17 — Save relocatable evidence and replay listener corrections
+
+Four focused `test_bundle.py` tests passed, including byte-identical SRT and ASS from a moved ZIP in a `python -S` subprocess, a length-changing correction, corrected edge, added second voice, interval note and explicit timed subdivision. Invalid edits and damaged evidence preserve existing files. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (77 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P17 Save relocatable evidence and replay listener corrections`.
 
 ## Updating this ledger
 

@@ -89,7 +89,9 @@ class ReplaySubtitles:
     output: ReplayOutput
 
     def __call__(self, request: ReplayRequest) -> ReplayResult:
-        evidence = self.store.load(request.bundle)
+        return self.replay_evidence(self.store.load(request.bundle), request)
+
+    def replay_evidence(self, evidence: Evidence, request: ReplayRequest) -> ReplayResult:
         export = self.editor.render(evidence, request.corrections)
         paths = self.output.write(
             request.output_directory, evidence.stem, evidence.stream.language, export.srt, export.ass,

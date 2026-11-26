@@ -167,12 +167,21 @@ class PhraseCandidate:
 
 
 @dataclass(frozen=True)
+class TimedText:
+    text: str
+    interval: SampleInterval
+
+
+@dataclass(frozen=True)
 class ListenerDecision:
     id: str
     target_id: str
     listener: str
-    field: Literal["wording", "owner", "start", "end", "suppress", "note"]
+    field: Literal["wording", "owner", "start", "end", "suppress", "note", "add"]
     value: str | Voice | int | None
+    interval: SampleInterval | None = None
+    voice: Voice | None = None
+    subdivisions: tuple[TimedText, ...] = ()
 
 
 @dataclass(frozen=True)
