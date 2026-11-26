@@ -94,6 +94,8 @@ class ModelRun:
     options: tuple[str, ...]
     backend: str
     device_id: str
+    elapsed_seconds: float | None = None
+    peak_allocated_bytes: int | None = None
 
 
 @dataclass(frozen=True)

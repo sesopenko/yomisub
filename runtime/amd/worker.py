@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
+from time import monotonic
 
 from weights import SCAN, SEPARATOR, verified
 
@@ -76,7 +77,7 @@ def execute(request):
         raise WorkerError("runtime")
     if request["action"] == "devices":
         return {"devices": inventory, "versions": versions}
-    if request["stage"] not in ("diarization", "separation") or request["action"] != "probe":
+    if request["stage"] not in ("diarization", "separation") or request["action"] not in ("probe", "scan"):
         raise WorkerError("protocol")
     chosen = [d for d in inventory if d["id"] == request["device"]]
     if len(chosen) != 1:
@@ -88,7 +89,22 @@ def execute(request):
     if effective != request["device"]:
         raise WorkerError("device")
     model = load_model(request["stage"], Path(request["weights"]).resolve(), device)
-    return {"device": effective, "versions": versions, "stage": request["stage"]}
+    result = {"device": effective, "versions": versions, "stage": request["stage"]}
+    if request["action"] == "scan":
+        if request["stage"] != "diarization":
+            raise WorkerError("protocol")
+        import soundfile as sf
+
+        signal, rate = sf.read(request["audio"], dtype="float32")
+        if signal.ndim != 1 or rate != 16000:
+            raise WorkerError("audio")
+        torch.cuda.reset_peak_memory_stats(device)
+        started = monotonic()
+        turns = model({"uri": request["uri"], "waveform": torch.from_numpy(signal[None]), "sample_rate": rate})
+        torch.cuda.synchronize(device)
+        result.update(rttm=turns.to_rttm(), elapsed_seconds=monotonic() - started,
+                      peak_allocated_bytes=torch.cuda.max_memory_allocated(device))
+    return result
 
 
 def main():

@@ -15,6 +15,7 @@ RECOVERY = {
     "protocol": "Install matching Yomisub worker and application versions.",
     "weights": "Run the documented weights.py setup for this stage with approved model access.",
     "device": "Check ROCm device permissions, visibility and the selected PCI address.",
+    "audio": "Prepare a nonempty mono 16 kHz analysis WAV for this worker.",
     "runtime": "Install the pinned ROCm worker dependencies and verify the model probe.",
 }
 
