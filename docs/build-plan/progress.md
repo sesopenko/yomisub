@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P05](tasks/P05.md).** 21 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P06](tasks/P06.md).** 29 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -9,7 +9,7 @@
 | P02 | 5 | Complete | Application, model and compute contracts with fakes |
 | P03 | 5 | Complete | Provider registration and per-stage GPU placement |
 | P04 | 5 | Complete | Baseline fixtures and accuracy scoring |
-| P05 | 8 | Pending | Selected-track audio and recording clock |
+| P05 | 8 | Complete | Selected-track audio and recording clock |
 | P06 | 5 | Pending | AMD Vulkan device binding |
 | P07 | 5 | Pending | Continuous Whisper observations |
 | P08 | 5 | Pending | Isolated AMD ROCm worker and setup checks |
@@ -131,6 +131,12 @@ Ran the original 5bf2697 generator with the verified medium checkpoint on all fi
 `uv run --locked python -m unittest discover -s tests -p test_evaluation.py` passed seven scorer tests. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (37 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed. Re-scoring the ignored final SRTs matched the committed JSON exactly.
 
 Commit subject is `P04 Freeze legacy subtitle recovery and independent timing scores`.
+
+### P05 — Prepare selected audio on the recording clock
+
+FFmpeg decoded all five research tracks with validated frame counts. The generated `gitignored-inputs/evaluation/track-clock.mkv` has a video origin of 10 s and two tagged tones. Selecting Japanese (global index 2, ordinal 1) returned 44100 frames at 44.1 kHz with 700 positive crossings and an exact 1/4 s playback delay. The 220 Hz English track remained distinguishable. The focused `test_audio.py` suite passed 4 tests, including outward-rounded crops and early audio. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (41 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P05 Prepare selected audio on the recording clock`.
 
 ## Updating this ledger
 
