@@ -45,6 +45,7 @@ class AudioSource:
     delay: int = 0
     column: int | None = None
     requested_recording_bounds: tuple[Fraction, Fraction] | None = None
+    core_id: str | None = None
 
     def __post_init__(self):
         if self.sample_rate <= 0 or min(self.frames, self.leading_padding, self.trailing_padding) < 0:

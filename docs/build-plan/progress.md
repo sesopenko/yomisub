@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P10](tasks/P10.md).** 49 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P11](tasks/P11.md).** 54 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -14,7 +14,7 @@
 | P07 | 5 | Complete | Continuous Whisper observations |
 | P08 | 5 | Complete | Isolated AMD ROCm worker and setup checks |
 | P09 | 5 | Complete | Required diarization and activity measurements |
-| P10 | 5 | Pending | Contextual retries on the original mix |
+| P10 | 5 | Complete | Contextual retries on the original mix |
 | P11 | 5 | Pending | Optional SepFormer listening and stem ASR |
 | P12 | 5 | Pending | Japanese surface alignment and grouping |
 | P13 | 8 | Pending | Candidate reconciliation and attribution |
@@ -161,6 +161,12 @@ Commit subject is `P08 Provision and probe an isolated ROCm worker`.
 Live analysis on the fresh ROCm worker yielded 15 S01E10 turns and reproduced the 26.221–26.744 s coactivity region, with three anonymous voices over the recording. Device, RTTM, elapsed inference time and peak allocation are in `gitignored-inputs/evaluation/amd/S01E10-scan.json`. The shared scanner contract and `test_activity.py` passed, including the mixed-URI research RTTM, duplicate and nested turns, changing coactivity, silence, crash and negative duration. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (51 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P09 Scan full recordings and measure simultaneous voice activity`.
+
+### P10 — Retain an original-mix retry for every overlap core
+
+Added one contextual large-v3 retry per exact active-ID core and retained its own source, core link, padding-only segment IDs and any failure finding. The continuous transcript remains a separate application input. `test_refinement.py` passed three tests covering both edges, intersecting contexts, crowded cores, no overlap, failed retries and the two documented S01E10 window readings. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (54 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P10 Retain an original-mix retry for every overlap core`.
 
 ## Updating this ledger
 

@@ -92,6 +92,8 @@ class AudioPreparation(Protocol):
 class Transcript:
     run: ModelRun
     segments: tuple[TranscriptSegment, ...]
+    core_id: str | None = None
+    context_only_segment_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
