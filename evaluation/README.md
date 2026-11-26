@@ -20,3 +20,17 @@ Obtain `japanese-themed-dialogue01_audio.wav` and `japanese-themed-dialogue01.ea
 Use the legacy package at `5bf2697` and the tool and checkpoint identities recorded in `legacy-run.json`. Verify the five video hashes against both local feasibility records (`manifest.json` and `inputs.sha256`). Verify all remaining input hashes in `references.json`. Place symlinks to each input in an empty ignored evaluation directory. Run the original `yomisub.generation.generate_subtitles` with the four adapters wired in the legacy launcher and pass each symlink as the video path, the listed audio ordinal, language `ja`, and model `medium`. This writes the final SRT beside the symlink. The controls and timing fixture have untagged WAV streams with known Japanese speech. Effective Vulkan device selection is recorded in the actual stderr logs.
 
 From the project root, run `uv run --locked python -m evaluation.score gitignored-inputs/evaluation/legacy` and compare its JSON to `legacy-scores.json`. Per-scene results and recovered IDs are frozen there. Across the nine recordings, four of nine independent timing utterances matched. The respective legacy medians are 1815 ms for onset and 1305 ms for release.
+
+## Running the rebuilt acceptance set
+
+Configure the production AMD worker, weights, Vulkan executable and model cache as for GTK. From the repository root, use the following commands with your local input and output directories. The generator checks input hashes and selected tracks before calling the application. Only media, stream, language and selected model enter generation. Scoring reads listener references separately.
+
+```sh
+uv run --locked python -m evaluation.generate gitignored-inputs gitignored-inputs/evaluation/release
+uv run --locked python -m evaluation.acceptance gitignored-inputs/evaluation/release
+uv run --locked python -m evaluation.review gitignored-inputs/evaluation/release gitignored-inputs/evaluation/review-release
+```
+
+Use a fresh output directory for corrected replay. The automatic report checks every actual SRT state and ASS event against the saved plan, then maps the displayed text back to its recording-local voice. The review command checks the published A/B/B corrections, verified instrumental and unresolved chorus notes, and a two-line layout fixture on the staggered control. The fixture timings verify independent entry and release. They do not enter the automatic accuracy score. [Release measurements](../docs/build-plan/acceptance.md)
+
+The worker preserves shared boundaries before converting pyannote turns to onset-plus-duration RTTM. The scorer rounds the resulting event edges once to milliseconds for comparison against the integer reference. The release also includes a three-voice layout fixture on the crowded clip and separately verifies the recording-local recurring voice and open spelling question on S01E01.

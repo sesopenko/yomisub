@@ -57,4 +57,16 @@ class CuePlanner:
         result = spot(evidence,decisions)
         phrases = tuple(sorted(result.phrases,key=lambda p:(p.interval.start,p.id)))
         states,findings = layout(evidence.clock,phrases)
+        if evidence.planner_version >= 2:
+            # The scanner can miss singing. Report substantial empty stretches without
+            # assigning a cause or fabricating lyrics.
+            notes = tuple(d for d in decisions if d.field == "note" and d.interval)
+            gaps = tuple(ReviewFinding(f"untranscribed-{s.interval.start}-{s.interval.end}",
+                                       "No supported words. Listen for silence, music or unresolved voices.",
+                                       ("original",), s.interval)
+                         for s in states if not s.lanes
+                         and s.interval.end - s.interval.start >= evidence.clock.sample_rate
+                         and not any(d.interval.start <= s.interval.start and s.interval.end <= d.interval.end
+                                     for d in notes))
+            findings += gaps
         return CuePlan(phrases,states,result.findings+findings,result.candidates)

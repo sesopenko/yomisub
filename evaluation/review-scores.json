@@ -1,0 +1,61 @@
+{
+  "corrected_fight": {
+    "koushimasu": {
+      "recovered": true,
+      "display_ms": [
+        44680,
+        45950
+      ],
+      "display_owner": "A",
+      "ownership": "correct"
+    },
+    "sou": {
+      "recovered": true,
+      "display_ms": [
+        45960,
+        47950
+      ],
+      "display_owner": "B",
+      "ownership": "correct"
+    },
+    "taerareru": {
+      "recovered": true,
+      "display_ms": [
+        47960,
+        49960
+      ],
+      "display_owner": "B",
+      "ownership": "correct"
+    }
+  },
+  "corrected_song_notes": {
+    "instrumental": "Verified instrumental break.",
+    "chorus": "Chorus audible, words unresolved."
+  },
+  "staggered_layout_fixture": [
+    [
+      [
+        "A",
+        0
+      ]
+    ],
+    [
+      [
+        "A",
+        0
+      ],
+      [
+        "B",
+        1
+      ]
+    ],
+    [
+      [
+        "B",
+        1
+      ]
+    ],
+    []
+  ],
+  "three_voice_layout_fixture": "three distinct lanes and crowding finding"
+}

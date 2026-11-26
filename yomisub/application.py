@@ -72,14 +72,14 @@ class GenerateSubtitles:
             groups = tuple(group for run in transcripts for group in self.grouper.group(run, language))
             evidence = Evidence(
                 request.video.stem, request.stream, track.clock, tuple(file.source for file in files),
-                transcripts, scan, extra.runs, groups, extra.findings,
+                transcripts, scan, extra.runs, groups, extra.findings, planner_version=2,
             )
             progress("Preparing subtitle outputs...")
             export = self.editor.render(evidence)
             bundle = work / "evidence.zip"
             self.store.save(bundle, evidence, files, export.plan, export.findings)
             paths = self.publisher.publish(request.video, language, export.srt, export.ass, bundle)
-            return GenerationResult(*paths, export.findings)
+            return GenerationResult(*paths, export.findings, extra.findings)
 
 
 @dataclass

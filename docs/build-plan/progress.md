@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P21](tasks/P21.md).** 111 of 119 points complete. [Authoritative plan](plan.md)
+**All tasks complete.** 119 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -25,7 +25,7 @@
 | P18 | 5 | Complete | Recoverable publication |
 | P19 | 5 | Complete | Production generation workflow |
 | P20 | 3 | Complete | GTK workflow and user documentation |
-| P21 | 8 | Pending | Paired accuracy and hardware acceptance |
+| P21 | 8 | Complete | Paired accuracy and hardware acceptance |
 
 ## Completion record
 
@@ -227,6 +227,18 @@ Commit subject is `P19 Compose the production generation workflow and model prov
 Two focused `test_presenter.py` tests and the suite passed. GTK on an isolated X display showed actionable missing-worker instructions, restored the Generate button and succeeded on retry with the actual AMD worker. A 14 s two-track video selected Japanese audio ordinal 1 and tiny. The GTK result showed three paths and two distinct findings matching the saved bundle. Widget updates ran on the main thread. [GTK screenshot](../subtitle-generation.png). `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (84 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P20 Connect GTK to speaker-aware generation and evidence review`.
+
+### P21 diagnostic run
+
+The first automatic pass left both checked S01E01 owners unresolved. Its ASR intervals extended into silence, despite multiple individually supported lexical pieces from the same voice. On the timing corpus, cutting at commas with touching token estimates split one utterance across different displayed owners and lost the frozen ID `a4`. On the theme song, a terminal token extended the preceding lyric into the instrumental break, and an unsupported low-confidence English sign-off appeared in the chorus. The staggered control also exposed a 1 ms overlap created when RTTM rounded the previous onset and duration independently.
+
+The regression tests exercise these mechanisms with unrelated surfaces and timings. Planner revision 2 keeps touching comma-delimited material together, uses supported solo edges and independently timed, grammatical breaks, retains questionable readings in the evidence, and records untranscribed intervals for listening. Older automatic bundles retain their original planning rules. The worker now serializes both boundaries at the precision delivered by pyannote. A fresh run on the frozen recordings checks the cumulative effect. [Evaluation and reproduction](../../evaluation/README.md)
+
+### P21 — Verify paired subtitle accuracy and correct evidence alignment
+
+All nine automatic gates passed on nine fresh real AMD runs. The rebuilt SRT retained every one of the 20 frozen legacy-recovered IDs. Across four independently timed matches, median absolute onset/release errors changed from 1815/1305 ms to 1640/320 ms. The scorer verified every SRT state and ASS event. Both constructed positives matched, with no false positives on either or the alternating negative. Offline A/B/B corrections, music notes and two- and three-voice display fixtures passed separately. The final GTK tiny run on Japanese audio ordinal 1 recovered after missing speaker setup, reported six distinct findings, and replayed byte-identically offline. One physical Radeon was available, with split placement tested using controlled providers. See [acceptance results and open scene limitations](acceptance.md). Seven focused regression tests passed. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (91 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed. Evaluation and worker compilation, 22 task IDs, and local links in 27 Markdown files also passed.
+
+Commit subject is `P21 Verify paired subtitle accuracy and correct evidence alignment`.
 
 ## Updating this ledger
 

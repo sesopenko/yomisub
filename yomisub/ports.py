@@ -168,6 +168,7 @@ class Evidence:
     groups: tuple[Grouping, ...]
     findings: tuple[ReviewFinding, ...]
     decisions: tuple[ListenerDecision, ...] = ()
+    planner_version: int = 1
 
 
 @dataclass(frozen=True)
@@ -214,6 +215,7 @@ class GenerationResult:
     ass: Path
     bundle: Path
     findings: tuple[ReviewFinding, ...]
+    refinement_findings: tuple[ReviewFinding, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -2,8 +2,9 @@
 
 from dataclasses import dataclass
 
+from .activity import activity, coverage
 from .domain import PlannedPhrase, ReviewFinding, SampleInterval
-from .reconcile import intersects, ownership, reconcile
+from .reconcile import intersects, ownership, reconcile, wording
 from .timing import anchored_interval
 
 
@@ -32,15 +33,89 @@ def valid_pieces(segment, source, clock):
     return intervals, problems
 
 
-def timed_parts(segment, source, clock, group, changed):
+def supported_cut(left, whitespace, a, b, scan):
+    if scan is None:
+        return True
+    if whitespace:
+        # Whisper sometimes puts the space before a new clause on its first token.
+        region = SampleInterval(a.clock, a.start, b.end)
+        return any(not span.voices and span.interval.start <= b.start < span.interval.end
+                   for span in activity(scan, region))
+    # A comma proposes a wrap. Touching token estimates alone cannot establish a pause.
+    return not left.surface.endswith(("、", "，", ",")) or a.end < b.start
+
+
+def solo_edges(bounds, scan, pieces, valid):
+    """Refine ASR fringes against one continuous solo turn with lexical support on both sides."""
+    spans = [s for s in activity(scan, bounds) if s.voices]
+    if len(spans) != 1 or len(spans[0].voices) != 1:
+        return bounds
+    solo = spans[0].interval
+    if 2*(solo.end-solo.start) < bounds.end-bounds.start:
+        return bounds
+    middle = (bounds.start + bounds.end) / 2
+    anchors = [valid[p.id] for p in pieces if p.id in valid and wording(p.surface)]
+    covered = [part for part in anchors if solo.start <= part.start < part.end <= solo.end]
+    if any(a.start < middle for a in covered) and any(a.end > middle for a in covered):
+        return solo
+    return bounds
+
+
+def supported_release(bounds, scan, segment, group, pieces, valid):
+    """Recover the last fully voiced surface when the final ASR word extends beyond speech."""
+    if not group or group.strategy != "sudachi" or not pieces:
+        return None
+    visible = [s for s in activity(scan, bounds) if s.voices]
+    if not visible or len({v for s in visible for v in s.voices}) != 1:
+        return None
+    end = visible[-1].interval.end
+    if end >= bounds.end:
+        return None
+    lexical = [p for p in pieces if wording(p.surface)]
+    if not lexical or lexical[-1].id not in valid or valid[lexical[-1].id].start < end:
+        return None
+    by_id = {p.id: p for p in lexical}
+    for span, ids in reversed(tuple(zip(group.surfaces, group.piece_ids))):
+        if not wording(segment.text[span.start:span.end]) or not ids or not all(id in by_id for id in ids):
+            continue
+        tokens = [by_id[id] for id in ids]
+        if tokens[0].span.start != span.start or tokens[-1].span.end != span.end:
+            continue
+        if all(p.id in valid and bounds.start <= valid[p.id].start and valid[p.id].end <= end
+               and not coverage(scan, valid[p.id]).uncovered for p in tokens):
+            return valid[tokens[-1].id].end, tuple(ids)
+    return None
+
+
+def unsupported_foreign_reading(evidence, candidate, segment):
+    if evidence.stream.language not in {"ja", "jpn"} or not candidate.interval:
+        return False
+    text = wording(segment.text)
+    return (text and text.isascii() and any(c.isalpha() for c in text)
+            and any(p.span and wording(p.surface) and p.probability is not None and p.probability < 0.5
+                    for p in segment.pieces)
+            and not coverage(evidence.scan, candidate.interval).per_voice
+            and candidate.evidence_ids == (segment.id,))
+
+
+def timed_parts(segment, source, clock, group, changed, scan=None):
     lexical = [p for p in segment.pieces if p.span is not None]
     intervals, invalid = valid_pieces(segment,source,clock)
+    # A standalone space may have zero duration. Keep its text offset, but anchor
+    # an acoustic break with the neighboring spoken pieces.
+    if scan is not None:
+        lexical = [p for p in lexical if p.surface.strip()]
     cuts = []
     permitted = set(group.cut_offsets) if group and not changed else set()
     for left, right in zip(lexical,lexical[1:]):
         a,b = intervals.get(left.id),intervals.get(right.id)
-        if left.span.end == right.span.start and left.span.end in permitted and a and b and a.end <= b.start:
-            cuts.append(left.span.end)
+        offset = left.span.end
+        gap = segment.text[offset:right.span.start]
+        whitespace = bool(gap.isspace() or right.surface[:1].isspace())
+        word_break = scan is not None and group and not changed and whitespace and offset in group.wrap_offsets
+        if ((offset in permitted or word_break) and (not gap or gap.isspace()) and a and b
+                and a.end <= b.start and supported_cut(left, whitespace, a, b, scan)):
+            cuts.append(offset)
     offsets = [0,*cuts,len(segment.text)]
     return [(a,b,[p for p in lexical if a <= p.span.start and p.span.end <= b])
             for a,b in zip(offsets,offsets[1:])], intervals, invalid
@@ -86,7 +161,13 @@ def spot(evidence, decisions=()):
         group = groups.get(segment.id)
         if group and group.diagnostic:
             findings.append(ReviewFinding(segment.id+"-grouping",group.diagnostic,(segment.id,),candidate.interval))
-        parts, valid, unusable = timed_parts(segment,source,clock,group,"wording" in fields)
+        scan = evidence.scan if evidence.planner_version >= 2 else None
+        if scan and not fields and unsupported_foreign_reading(evidence, candidate, segment):
+            findings.append(ReviewFinding(candidate.id + "-unverified",
+                                          "Foreign-language reading with uncertain tokens and no detected voice.",
+                                          (segment.id, scan.run.id), candidate.interval))
+            continue
+        parts, valid, unusable = timed_parts(segment,source,clock,group,"wording" in fields,scan)
         if unusable:
             findings.append(ReviewFinding(segment.id+"-anchors","Missing, unordered or out-of-bounds lexical timing.",
                                           tuple(unusable),candidate.interval))
@@ -112,6 +193,15 @@ def spot(evidence, decisions=()):
                 findings.append(ReviewFinding(id+"-timing","Phrase has no ordered, playable pair of timing anchors.",
                                               candidate.evidence_ids,candidate.interval))
                 continue
+            release_ids = ()
+            if scan and not candidate.secondary and not (start_edit or end_edit):
+                release = supported_release(bounds, scan, segment, group, pieces, valid)
+                if release is not None:
+                    edge, release_ids = release
+                    findings.append(ReviewFinding(id + "-release", "Final word extends past detected speech. Review the release.",
+                                                  (segment.id, scan.run.id, *release_ids), bounds))
+                    bounds = SampleInterval(clock, bounds.start, edge)
+                bounds = solo_edges(bounds, scan, pieces, valid)
             owner_edit = part_fields.get("owner")
             owners = ownership(evidence.scan,bounds,segment,source,{p.id for p in pieces})
             owner = owner_edit.value if owner_edit else owners[0].voice if owners else None
@@ -137,10 +227,16 @@ def spot(evidence, decisions=()):
                 continue
             if not text.strip():
                 continue
-            support = [*candidate.evidence_ids]
+            support = [*candidate.evidence_ids, *release_ids]
             support += [p.id for p in pieces if p.id in valid and (p is pieces[0] or p is pieces[-1])]
             support += [edit.id for field, edit in part_fields.items() if field not in ("start", "end")]
             support += [edit.id for edit in (start_edit, end_edit) if edit is not None]
+            if scan and "wording" not in part_fields:
+                uncertain = tuple(p.id for p in pieces if wording(p.surface)
+                                  and p.probability is not None and p.probability < 0.5)
+                if uncertain:
+                    findings.append(ReviewFinding(id + "-wording", "Check the spelling against the listening audio.",
+                                                  uncertain, bounds))
             if owners and owner:
                 support.extend(owners[0].evidence_ids)
             phrases.append(PlannedPhrase(id,text,owner,bounds,tuple(dict.fromkeys(support))))

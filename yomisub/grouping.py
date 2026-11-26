@@ -43,7 +43,11 @@ def grammatical_edges(morphs):
             (left.surface() == "は" and right.surface() not in {"ない", "あり", "いけ", "なら"})
         ):
             edges.append(left.end())
-    return tuple(edges)
+    for left, blank, right in zip(morphs, morphs[1:], morphs[2:]):
+        if (blank.surface().isspace() and left.part_of_speech()[0] != "接頭辞"
+                and right.part_of_speech()[0] not in {"助詞", "助動詞", "接尾辞", "補助記号"}):
+            edges.append(blank.begin())
+    return tuple(sorted(set(edges)))
 
 
 class PhraseGrouping:

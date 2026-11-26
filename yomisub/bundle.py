@@ -134,7 +134,7 @@ class BundleStore:
         if {f.source for f in files}!=set(evidence.sources) or len(files)!=len(evidence.sources):
             raise BundleError("Missing listening or analysis file for an evidence source.")
         members = {f.source.id:f"audio/{i:04}.wav" for i,f in enumerate(files)}
-        manifest = {"schema":1,"planner":1,"id":str(uuid4()),"audio":members,
+        manifest = {"schema":1,"planner":evidence.planner_version,"id":str(uuid4()),"audio":members,
                     "evidence":encode(evidence),"plan":encode(plan),"open_findings":encode(open_findings)}
         with ZipFile(destination,"x",compression=ZIP_STORED,allowZip64=True) as archive:
             archive.writestr("manifest.json",json.dumps(manifest,ensure_ascii=False,allow_nan=False).encode())
@@ -145,9 +145,11 @@ class BundleStore:
         try:
             with ZipFile(path) as archive:
                 doc=json.loads(archive.read("manifest.json"))
-                if doc["schema"]!=1 or doc["planner"]!=1:
+                if doc["schema"]!=1 or doc["planner"] not in (1,2):
                     raise ValueError("Unsupported bundle schema or planner version.")
                 evidence=decode(Evidence,doc["evidence"])
+                if evidence.planner_version != doc["planner"]:
+                    raise ValueError("Inconsistent planner version.")
                 plan=decode(CuePlan,doc["plan"])
                 findings=decode(tuple[ReviewFinding,...],doc["open_findings"])
                 validate(evidence,plan,findings)

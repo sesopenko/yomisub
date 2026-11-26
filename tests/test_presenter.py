@@ -18,8 +18,8 @@ class PresenterTests(unittest.TestCase):
 
     def test_pending_issue_count_paths_diagnostic_and_retry(self):
         adapter, ui = Mock(), Mock()
-        finding = ReviewFinding("mix-retry-1-failed", "Optional model unavailable", ("cue1", "cue2"))
-        result = GenerationResult(*(Path("clip.ja." + ext) for ext in ("srt", "ass", "yomisub.zip")), (finding,))
+        finding = ReviewFinding("missing-stem-2", "Optional model unavailable", ("cue1", "cue2"))
+        result = GenerationResult(*(Path("clip.ja." + ext) for ext in ("srt", "ass", "yomisub.zip")), (finding,), (finding,))
         adapter.side_effect = [StageError("Install the speaker worker"), result]
         for _ in range(2):
             run_job(adapter, Mock(), ui.status, ui.error, ui.finished)

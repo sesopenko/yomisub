@@ -21,9 +21,8 @@ def result_message(result):
     noun = "item" if count == 1 else "items"
     lines = [f"Saved subtitles and evidence. {count} {noun} to review.", str(result.srt), str(result.ass),
              str(result.bundle)]
-    failures = [f.reason for f in result.findings if "failed" in f.id]
-    if failures:
-        lines.append(failures[0])
+    if result.refinement_findings:
+        lines.append(result.refinement_findings[0].reason)
     return "\n".join(lines)
 
 

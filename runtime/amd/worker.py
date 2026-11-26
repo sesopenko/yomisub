@@ -10,6 +10,7 @@ import sys
 from tempfile import TemporaryDirectory
 from time import monotonic
 
+from turns import rttm
 from weights import SCAN, SEPARATOR, verified
 
 
@@ -102,7 +103,7 @@ def execute(request):
         started = monotonic()
         turns = model({"uri": request["uri"], "waveform": torch.from_numpy(signal[None]), "sample_rate": rate})
         torch.cuda.synchronize(device)
-        result.update(rttm=turns.to_rttm(), elapsed_seconds=monotonic() - started,
+        result.update(rttm=rttm(turns), elapsed_seconds=monotonic() - started,
                       peak_allocated_bytes=torch.cuda.max_memory_allocated(device))
     elif request["action"] == "separate":
         if request["stage"] != "separation":

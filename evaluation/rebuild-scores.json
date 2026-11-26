@@ -1,0 +1,964 @@
+{
+  "cases": {
+    "S01E01": {
+      "review_checks": {
+        "aside_recurs": true,
+        "aside_wording_flagged": true
+      },
+      "input_sha256": "48db422f01f3b4b8b96cde97d7e12c4306783a1b3ea1cfc478a11221977b5e00",
+      "stream": [
+        1,
+        0,
+        "ja"
+      ],
+      "wall_seconds": 45.036,
+      "distinct_findings": 19,
+      "runs": [
+        {
+          "source": "mix",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "medium:sha1:fd9727b6e1217c2f614f9b698455c4ffd82463b4",
+          "seconds": 2.699884566000037,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix",
+          "engine": "pyannote.audio",
+          "build": "3.3.2;torch=2.6.0+rocm6.4.2.git76481f7c;hip=6.4.43484-123eb5128",
+          "options": [
+            "whole-track",
+            "automatic-speaker-count"
+          ],
+          "backend": "amd-rocm",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "diarization-3.1@84fd2591/segmentation-3.0@e66f3d3b/wespeaker@837717dd",
+          "seconds": 6.555913686999702,
+          "peak_allocated_bytes": 1699063808
+        }
+      ],
+      "verified_export_parity": true,
+      "phrase_scores": {
+        "king-square": {
+          "recovered": true,
+          "display_ms": [
+            13143,
+            15810
+          ],
+          "display_owner": "SPEAKER_03",
+          "ownership": "correct"
+        },
+        "free-drinks": {
+          "recovered": true,
+          "display_ms": [
+            33983,
+            36760
+          ],
+          "display_owner": "SPEAKER_02",
+          "ownership": "correct"
+        }
+      },
+      "owner_mapping": {
+        "SPEAKER_02": "drinks-voice",
+        "SPEAKER_03": "king-voice"
+      },
+      "owners": {
+        "correct": 2
+      },
+      "observed_overlap_ms": [],
+      "overlap": null,
+      "verified_no_dialogue": []
+    },
+    "S01E03": {
+      "review_checks": {},
+      "input_sha256": "b33c33fb85c8396c2d17f7debfe132e28a67d3c0490f30f3df00d5d1b1931c70",
+      "stream": [
+        1,
+        0,
+        "ja"
+      ],
+      "wall_seconds": 46.716,
+      "distinct_findings": 12,
+      "runs": [
+        {
+          "source": "mix",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "medium:sha1:fd9727b6e1217c2f614f9b698455c4ffd82463b4",
+          "seconds": 2.9296908389997043,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix",
+          "engine": "pyannote.audio",
+          "build": "3.3.2;torch=2.6.0+rocm6.4.2.git76481f7c;hip=6.4.43484-123eb5128",
+          "options": [
+            "whole-track",
+            "automatic-speaker-count"
+          ],
+          "backend": "amd-rocm",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "diarization-3.1@84fd2591/segmentation-3.0@e66f3d3b/wespeaker@837717dd",
+          "seconds": 8.643913132000307,
+          "peak_allocated_bytes": 1699063808
+        }
+      ],
+      "verified_export_parity": true,
+      "phrase_scores": {
+        "koushimasu": {
+          "recovered": true,
+          "display_ms": [
+            44680,
+            45950
+          ],
+          "ownership": "unresolved"
+        },
+        "sou": {
+          "recovered": true,
+          "display_ms": [
+            45960,
+            47950
+          ],
+          "ownership": "unresolved"
+        },
+        "taerareru": {
+          "recovered": true,
+          "display_ms": [
+            47960,
+            49960
+          ],
+          "ownership": "unresolved"
+        }
+      },
+      "owner_mapping": {},
+      "owners": {
+        "unresolved": 3
+      },
+      "observed_overlap_ms": [],
+      "overlap": null,
+      "verified_no_dialogue": [
+        [
+          0,
+          10000,
+          "empty"
+        ]
+      ]
+    },
+    "S01E10": {
+      "review_checks": {},
+      "input_sha256": "26bab89223fe4606e776267efe72504db1a1d5e6c94192b4315e61ca64197518",
+      "stream": [
+        1,
+        0,
+        "ja"
+      ],
+      "wall_seconds": 44.454,
+      "distinct_findings": 34,
+      "runs": [
+        {
+          "source": "mix",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "medium:sha1:fd9727b6e1217c2f614f9b698455c4ffd82463b4",
+          "seconds": 2.7244448999999804,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix-retry-0",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "large-v3:sha1:ad82bf6a9043ceed055076d0fd39f5f186ff8062",
+          "seconds": 1.7003099159992416,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix",
+          "engine": "pyannote.audio",
+          "build": "3.3.2;torch=2.6.0+rocm6.4.2.git76481f7c;hip=6.4.43484-123eb5128",
+          "options": [
+            "whole-track",
+            "automatic-speaker-count"
+          ],
+          "backend": "amd-rocm",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "diarization-3.1@84fd2591/segmentation-3.0@e66f3d3b/wespeaker@837717dd",
+          "seconds": 4.909128108999539,
+          "peak_allocated_bytes": 1699063808
+        }
+      ],
+      "verified_export_parity": true,
+      "phrase_scores": {
+        "repeated-wait": {
+          "recovered": true,
+          "display_ms": [
+            20568,
+            22000
+          ],
+          "display_owner": "SPEAKER_02",
+          "ownership": "correct"
+        },
+        "pressure-root": {
+          "recovered": true,
+          "display_ms": [
+            22000,
+            24000
+          ],
+          "ownership": "unresolved"
+        }
+      },
+      "owner_mapping": {
+        "SPEAKER_02": "waiting-voice"
+      },
+      "owners": {
+        "correct": 1,
+        "unresolved": 1
+      },
+      "observed_overlap_ms": [
+        [
+          26221,
+          26744
+        ]
+      ],
+      "overlap": null,
+      "verified_no_dialogue": []
+    },
+    "S01E10-multi-speakers": {
+      "review_checks": {},
+      "input_sha256": "21c3ebdb15548d5b310ce3fce09eed92658ef58c6718d898d50eeff2ee77f59b",
+      "stream": [
+        1,
+        0,
+        "ja"
+      ],
+      "wall_seconds": 47.136,
+      "distinct_findings": 17,
+      "runs": [
+        {
+          "source": "mix",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "medium:sha1:fd9727b6e1217c2f614f9b698455c4ffd82463b4",
+          "seconds": 3.031997233999391,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix-retry-0",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "large-v3:sha1:ad82bf6a9043ceed055076d0fd39f5f186ff8062",
+          "seconds": 1.7554813950000607,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix-retry-1",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "large-v3:sha1:ad82bf6a9043ceed055076d0fd39f5f186ff8062",
+          "seconds": 1.6844503250003982,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix",
+          "engine": "pyannote.audio",
+          "build": "3.3.2;torch=2.6.0+rocm6.4.2.git76481f7c;hip=6.4.43484-123eb5128",
+          "options": [
+            "whole-track",
+            "automatic-speaker-count"
+          ],
+          "backend": "amd-rocm",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "diarization-3.1@84fd2591/segmentation-3.0@e66f3d3b/wespeaker@837717dd",
+          "seconds": 5.365084740000384,
+          "peak_allocated_bytes": 1699063808
+        }
+      ],
+      "verified_export_parity": true,
+      "phrase_scores": {},
+      "owner_mapping": {},
+      "owners": {},
+      "observed_overlap_ms": [
+        [
+          19657,
+          19927
+        ],
+        [
+          24230,
+          24382
+        ]
+      ],
+      "overlap": null,
+      "verified_no_dialogue": []
+    },
+    "S01E02": {
+      "review_checks": {
+        "closing_chorus": "abstained"
+      },
+      "input_sha256": "164502bc0ca35f8e6b93f94bab368991373bfc8153409eea572bab3c2437a032",
+      "stream": [
+        1,
+        0,
+        "ja"
+      ],
+      "wall_seconds": 51.344,
+      "distinct_findings": 21,
+      "runs": [
+        {
+          "source": "mix",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "medium:sha1:fd9727b6e1217c2f614f9b698455c4ffd82463b4",
+          "seconds": 4.533853839000585,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix",
+          "engine": "pyannote.audio",
+          "build": "3.3.2;torch=2.6.0+rocm6.4.2.git76481f7c;hip=6.4.43484-123eb5128",
+          "options": [
+            "whole-track",
+            "automatic-speaker-count"
+          ],
+          "backend": "amd-rocm",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "diarization-3.1@84fd2591/segmentation-3.0@e66f3d3b/wespeaker@837717dd",
+          "seconds": 11.60282022299998,
+          "peak_allocated_bytes": 1699063808
+        }
+      ],
+      "verified_export_parity": true,
+      "phrase_scores": {},
+      "owner_mapping": {},
+      "owners": {},
+      "observed_overlap_ms": [],
+      "overlap": null,
+      "verified_no_dialogue": [
+        [
+          19000,
+          29000,
+          "empty"
+        ]
+      ]
+    },
+    "serial": {
+      "review_checks": {},
+      "input_sha256": "0910db4212d5353857cff5445a424e6daf42fdb1912103a91ad1e053888c3335",
+      "stream": [
+        0,
+        0,
+        "ja"
+      ],
+      "wall_seconds": 41.009,
+      "distinct_findings": 8,
+      "runs": [
+        {
+          "source": "mix",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "medium:sha1:fd9727b6e1217c2f614f9b698455c4ffd82463b4",
+          "seconds": 1.9493012429993541,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix",
+          "engine": "pyannote.audio",
+          "build": "3.3.2;torch=2.6.0+rocm6.4.2.git76481f7c;hip=6.4.43484-123eb5128",
+          "options": [
+            "whole-track",
+            "automatic-speaker-count"
+          ],
+          "backend": "amd-rocm",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "diarization-3.1@84fd2591/segmentation-3.0@e66f3d3b/wespeaker@837717dd",
+          "seconds": 4.166008549000253,
+          "peak_allocated_bytes": 1699063808
+        }
+      ],
+      "verified_export_parity": true,
+      "phrase_scores": {
+        "king-1": {
+          "recovered": true,
+          "display_ms": [
+            554,
+            3929
+          ],
+          "display_owner": "SPEAKER_01",
+          "ownership": "correct"
+        },
+        "drinks-1": {
+          "recovered": true,
+          "display_ms": [
+            6882,
+            11354
+          ],
+          "display_owner": "SPEAKER_00",
+          "ownership": "correct"
+        },
+        "king-2": {
+          "recovered": true,
+          "display_ms": [
+            13008,
+            16370
+          ],
+          "display_owner": "SPEAKER_01",
+          "ownership": "correct"
+        },
+        "drinks-2": {
+          "recovered": true,
+          "display_ms": [
+            16500,
+            23500
+          ],
+          "ownership": "unresolved"
+        }
+      },
+      "owner_mapping": {
+        "SPEAKER_00": "drinks-voice",
+        "SPEAKER_01": "king-voice"
+      },
+      "owners": {
+        "correct": 3,
+        "unresolved": 1
+      },
+      "observed_overlap_ms": [],
+      "overlap": {
+        "hits": 0,
+        "misses": 0,
+        "false_positives": 0,
+        "edge_errors_ms": []
+      },
+      "verified_no_dialogue": []
+    },
+    "mix": {
+      "review_checks": {},
+      "input_sha256": "85c5ceb3ca98e4395c0930403aeba60c08cb1f6bb7516288770ab1f9497a42ff",
+      "stream": [
+        0,
+        0,
+        "ja"
+      ],
+      "wall_seconds": 43.435,
+      "distinct_findings": 17,
+      "runs": [
+        {
+          "source": "mix",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "medium:sha1:fd9727b6e1217c2f614f9b698455c4ffd82463b4",
+          "seconds": 2.1626664199993684,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix-retry-0",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "large-v3:sha1:ad82bf6a9043ceed055076d0fd39f5f186ff8062",
+          "seconds": 1.9960684920006315,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix",
+          "engine": "pyannote.audio",
+          "build": "3.3.2;torch=2.6.0+rocm6.4.2.git76481f7c;hip=6.4.43484-123eb5128",
+          "options": [
+            "whole-track",
+            "automatic-speaker-count"
+          ],
+          "backend": "amd-rocm",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "diarization-3.1@84fd2591/segmentation-3.0@e66f3d3b/wespeaker@837717dd",
+          "seconds": 4.163668559999678,
+          "peak_allocated_bytes": 1699063808
+        }
+      ],
+      "verified_export_parity": true,
+      "phrase_scores": {
+        "king-1": {
+          "recovered": true,
+          "display_ms": [
+            554,
+            3870
+          ],
+          "display_owner": "SPEAKER_02",
+          "ownership": "wrong"
+        },
+        "drinks-1": {
+          "recovered": true,
+          "display_ms": [
+            6882,
+            11354
+          ],
+          "display_owner": "SPEAKER_00",
+          "ownership": "correct"
+        },
+        "king-2": {
+          "recovered": true,
+          "display_ms": [
+            12400,
+            15400
+          ],
+          "display_owner": "SPEAKER_01",
+          "ownership": "correct"
+        },
+        "drinks-2": {
+          "recovered": true,
+          "display_ms": [
+            16400,
+            20270
+          ],
+          "display_owner": "SPEAKER_00",
+          "ownership": "correct"
+        }
+      },
+      "owner_mapping": {
+        "SPEAKER_00": "drinks-voice",
+        "SPEAKER_01": "king-voice"
+      },
+      "owners": {
+        "wrong": 1,
+        "correct": 3
+      },
+      "observed_overlap_ms": [
+        [
+          14273,
+          16332
+        ]
+      ],
+      "overlap": {
+        "hits": 1,
+        "misses": 0,
+        "false_positives": 0,
+        "edge_errors_ms": [
+          [
+            273,
+            -43
+          ]
+        ]
+      },
+      "verified_no_dialogue": []
+    },
+    "together": {
+      "review_checks": {},
+      "input_sha256": "76ee83746ba106850416d8a357f1fbe5508885106abbff54476f757ae5f8a91f",
+      "stream": [
+        0,
+        0,
+        "ja"
+      ],
+      "wall_seconds": 40.091,
+      "distinct_findings": 4,
+      "runs": [
+        {
+          "source": "mix",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "medium:sha1:fd9727b6e1217c2f614f9b698455c4ffd82463b4",
+          "seconds": 1.0638146680003047,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix-retry-0",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "large-v3:sha1:ad82bf6a9043ceed055076d0fd39f5f186ff8062",
+          "seconds": 1.6143219750001663,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix",
+          "engine": "pyannote.audio",
+          "build": "3.3.2;torch=2.6.0+rocm6.4.2.git76481f7c;hip=6.4.43484-123eb5128",
+          "options": [
+            "whole-track",
+            "automatic-speaker-count"
+          ],
+          "backend": "amd-rocm",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "diarization-3.1@84fd2591/segmentation-3.0@e66f3d3b/wespeaker@837717dd",
+          "seconds": 2.448703207000108,
+          "peak_allocated_bytes": 251436032
+        }
+      ],
+      "verified_export_parity": true,
+      "phrase_scores": {
+        "king-1": {
+          "recovered": false
+        },
+        "drinks-1": {
+          "recovered": true,
+          "display_ms": [
+            2560,
+            6000
+          ],
+          "display_owner": "SPEAKER_00",
+          "ownership": "correct"
+        }
+      },
+      "owner_mapping": {
+        "SPEAKER_00": "drinks-voice"
+      },
+      "owners": {
+        "correct": 1
+      },
+      "observed_overlap_ms": [
+        [
+          537,
+          3878
+        ]
+      ],
+      "overlap": {
+        "hits": 1,
+        "misses": 0,
+        "false_positives": 0,
+        "edge_errors_ms": [
+          [
+            37,
+            3
+          ]
+        ]
+      },
+      "verified_no_dialogue": []
+    },
+    "ingcrowd01-first23": {
+      "review_checks": {},
+      "input_sha256": "02929195cad43f163a842839915a87a6290006b23c9b372a8c9d40f1741e924b",
+      "stream": [
+        0,
+        0,
+        "ja"
+      ],
+      "wall_seconds": 43.754,
+      "distinct_findings": 4,
+      "runs": [
+        {
+          "source": "mix",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "medium:sha1:fd9727b6e1217c2f614f9b698455c4ffd82463b4",
+          "seconds": 1.590732472000127,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix-retry-0",
+          "engine": "whisper.cpp",
+          "build": "whisper.cpp version: 1.9.5-dev sha256:1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+          "options": [
+            "-l",
+            "ja",
+            "-bs",
+            "5",
+            "-bo",
+            "5",
+            "-ojf"
+          ],
+          "backend": "amd-vulkan",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "large-v3:sha1:ad82bf6a9043ceed055076d0fd39f5f186ff8062",
+          "seconds": 1.6048370660000728,
+          "peak_allocated_bytes": null
+        },
+        {
+          "source": "mix",
+          "engine": "pyannote.audio",
+          "build": "3.3.2;torch=2.6.0+rocm6.4.2.git76481f7c;hip=6.4.43484-123eb5128",
+          "options": [
+            "whole-track",
+            "automatic-speaker-count"
+          ],
+          "backend": "amd-rocm",
+          "device": "pci:0000:0f:00.0",
+          "model_revision": "diarization-3.1@84fd2591/segmentation-3.0@e66f3d3b/wespeaker@837717dd",
+          "seconds": 4.07547395399979,
+          "peak_allocated_bytes": 1699063808
+        }
+      ],
+      "verified_export_parity": true,
+      "phrase_scores": {
+        "a1": {
+          "recovered": true,
+          "display_ms": [
+            60,
+            4350
+          ],
+          "error_ms": [
+            -3410,
+            -90
+          ],
+          "ownership": "unresolved"
+        },
+        "a40": {
+          "recovered": false
+        },
+        "a2": {
+          "recovered": false
+        },
+        "a3": {
+          "recovered": true,
+          "display_ms": [
+            4800,
+            10000
+          ],
+          "error_ms": [
+            -3180,
+            640
+          ],
+          "ownership": "unresolved"
+        },
+        "a41": {
+          "recovered": true,
+          "display_ms": [
+            10060,
+            11300
+          ],
+          "error_ms": [
+            -100,
+            550
+          ],
+          "ownership": "unresolved"
+        },
+        "a4": {
+          "recovered": true,
+          "display_ms": [
+            11388,
+            14645
+          ],
+          "display_owner": "SPEAKER_00",
+          "error_ms": [
+            -12,
+            15
+          ],
+          "ownership": "correct"
+        },
+        "a42": {
+          "recovered": false
+        },
+        "a5": {
+          "recovered": false
+        },
+        "a43": {
+          "recovered": false
+        }
+      },
+      "owner_mapping": {
+        "SPEAKER_00": "speaker_1"
+      },
+      "owners": {
+        "unresolved": 3,
+        "correct": 1
+      },
+      "observed_overlap_ms": [
+        [
+          18762,
+          19319
+        ]
+      ],
+      "overlap": null,
+      "verified_no_dialogue": []
+    }
+  },
+  "paired": {
+    "required_ids": [
+      "S01E01/king-square",
+      "S01E01/free-drinks",
+      "S01E03/koushimasu",
+      "S01E03/sou",
+      "S01E03/taerareru",
+      "S01E10/repeated-wait",
+      "S01E10/pressure-root",
+      "serial/king-1",
+      "serial/drinks-1",
+      "serial/king-2",
+      "serial/drinks-2",
+      "mix/king-1",
+      "mix/drinks-1",
+      "mix/king-2",
+      "mix/drinks-2",
+      "together/drinks-1",
+      "ingcrowd01-first23/a1",
+      "ingcrowd01-first23/a3",
+      "ingcrowd01-first23/a41",
+      "ingcrowd01-first23/a4"
+    ],
+    "lost_ids": [],
+    "timed_ids": [
+      "ingcrowd01-first23/a1",
+      "ingcrowd01-first23/a3",
+      "ingcrowd01-first23/a41",
+      "ingcrowd01-first23/a4"
+    ],
+    "legacy_median_abs_ms": [
+      1815.0,
+      1305.0
+    ],
+    "rebuilt_median_abs_ms": [
+      1640.0,
+      320.0
+    ],
+    "coverage_pass": true,
+    "timing_pass": true
+  },
+  "automatic_gates": {
+    "legacy_recovered_ids_preserved": true,
+    "paired_independent_edges_improved": true,
+    "ordinary_exchange": true,
+    "recurring_voice_and_uncertain_spelling": true,
+    "constructed_overlaps": true,
+    "alternating_control": true,
+    "instrumental_break_clear": true,
+    "closing_chorus_unresolved": true,
+    "both_exports_match_plan": true
+  }
+}
