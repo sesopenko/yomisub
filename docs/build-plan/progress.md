@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P16](tasks/P16.md).** 85 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P17](tasks/P17.md).** 90 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -20,7 +20,7 @@
 | P13 | 8 | Complete | Candidate reconciliation and attribution |
 | P14 | 8 | Complete | Phrase onset, release and timed cuts |
 | P15 | 5 | Complete | Active phrases and stable speaker lanes |
-| P16 | 5 | Pending | SRT and ASS rendering |
+| P16 | 5 | Complete | SRT and ASS rendering |
 | P17 | 8 | Pending | Evidence bundle and offline replay |
 | P18 | 5 | Pending | Recoverable publication |
 | P19 | 5 | Pending | Production generation workflow |
@@ -197,6 +197,12 @@ Commit subject is `P14 Spot independent phrase edges and recheck final owners`.
 The shared planner sweeps coincident events once, preserves continuing lanes, uses neutral labels for supported recording-local voices, and keeps a third phrase with a crowding finding. Two focused `test_layout.py` tests cover stable A/B entry and release, same-onset order, coincident changes, repeatability and exact combined reading demand (4 + 3 = 7 characters/s). `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (71 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P15 Lay out active phrases in stable speaker lanes`.
+
+### P16 — Render SRT screen states and independent ASS lanes
+
+Two focused `test_writers.py` tests parsed UTF-8 SRT and ASS, checked literal markup, shared boundaries, half-up rounding, duration clamps and unique collapse diagnostics. FFmpeg/libass rendered a 1280×720 three-voice example: all three Japanese phrases were readable and the continuing lane was pixel-identical before and after the other voice cleared (1248 bright pixels). The reviewed frame and ASS are at `gitignored-inputs/evaluation/layout/`. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (73 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P16 Render SRT screen states and independent ASS lanes`.
 
 ## Updating this ledger
 
