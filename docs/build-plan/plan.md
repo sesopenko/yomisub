@@ -1,0 +1,98 @@
+# Subtitle timing and speaker-aware generation
+
+This is the authoritative implementation plan. Build for a Japanese learner who wants the words on screen to follow the voices in the recording, including when one person interrupts another. Deliver three sibling files from GTK: `<stem>.<language>.srt`, `<stem>.<language>.ass`, and `<stem>.<language>.yomisub.zip` for replay and review. Speaker analysis is required. If its runtime, model access, or selected device is unavailable, stop and show the setup or recovery steps. The release uses speech models and deterministic editorial rules, with no LLM dependency.
+
+The current writer extends every cue by 0.5 seconds and caps it at six seconds. The replacement chooses the onset and release of each phrase from evidence. The routing experiment found all three test overlaps, yet recovered **zero of three** as two usable, correctly attributed lines. Keep continuous original-mix ASR as the baseline. Use a speaker scan to locate possible interruptions and contextual retries to gather additional readings. Score wording, timing and speaker assignment separately. [Whisper findings](../whisper-input-findings.md) · [Routing experiment](../overlap-routing-poc.md) · [Separation findings](../speaker-separation-findings.md) · [Japanese editorial brief](../japanese-subtitling-craft-for-yomisub.md)
+
+## Architecture and interfaces
+
+```text
+GTK worker ──► GenerateSubtitles(request, progress) ──► generation result
+                       │
+                selected track + media clock
+                       ├── continuous ASR on original mix
+                       └── independent speaker scan
+                                   └── contextual mix retries / optional isolated sources
+                       │
+                recorded observations + editorial decisions
+                       ▼
+               phrase grouping → attribution and spotting → active-cue layout
+                       │                                         │
+                 evidence bundle                        SRT and ASS writers
+                       └──────────────── publication ────────────┘
+
+Replay(bundle, decisions) enters at recorded observations and uses the same planner.
+```
+
+**Dependency direction.** The domain owns immutable values and pure editorial policies. The application owns the generation and replay use cases and the small Python `Protocol` interfaces they consume. GTK, FFmpeg, model runtimes, the filesystem and serializers are adapters. The launcher constructs concrete dependencies. No vendor SDK, GTK type, subprocess, model-cache path or subtitle-format type crosses into the domain. Build and contract-test the interfaces before adding their production implementations. Run the same behavioral contract against a fake and each relevant adapter. This gives each component one reason to change and allows new hardware, grouping policies and output formats through composition.
+
+| Contract | Input and result |
+| --- | --- |
+| Track reader and audio preparation | A video and selected stream produce a recording clock, an original-channel listening source, and 16 kHz mono analysis audio. Each derived waveform identifies its parent, sample rate, crop origin, padding and delay. |
+| Transcriber, speaker scanner, optional separator | Each takes a source and a bound execution target. ASR returns segments with raw text, Unicode spans and optional piece times. Scanning returns overlapping recording-local voice turns. Separation returns two excerpt-local waveforms. Each result identifies its run, model revision, options, backend and device. |
+| Compute provider | Advertises supported model operations and devices, binds an operation to a selected device, and reports the effective device or a setup error. This contract applies to continuous ASR, retry ASR, diarization and optional separation or stem ASR. |
+| Phrase grouper, cue planner and layout | Observations and optional listener decisions produce phrases with independent wording, ownership and timing evidence, a list of unresolved intervals, then ordered screen states with stable lanes. Use plain functions for stable policies and a strategy interface where behavior varies by language. |
+| Evidence store, writers and publisher | The evidence store saves and reloads a versioned bundle. Each writer consumes the same cue plan. The publisher returns the three paths and review counts after successful publication. Replay regenerates exports from recorded evidence and optional explicit corrections without inference. |
+
+**Clock and ownership.** Anchor observations in integer samples on the selected recording, with half-open intervals and exact rate/origin conversions. Retain the relationship between stream timestamps and the video playback origin. Round only at export precision. Keep rejected raw times, including inverted and out-of-media values, available for review. A text hypothesis, detected turn, active speaker, estimated source column and published line have distinct identities. Store listener corrections as overlays with provenance.
+
+**Multiple GPUs.** Use capability and physical device identity for placement. Allow a device preference for each stage in the user's `yomisub/compute.toml` under the XDG configuration directory. An unspecified stage uses a compatible configured default or the sole compatible device. Show actionable choices for ambiguous configurations. Use a stable identifier such as a PCI address or UUID, then resolve each runtime's device index at launch. Respect process visibility settings and isolate device selection to the child running inference. The first providers target AMD with whisper.cpp/Vulkan and a separately provisioned Python 3.12 ROCm worker for pyannote and SpeechBrain. The GTK app stays on Python 3.13. Stages may use different GPUs in one job. Execute model stages sequentially for the first release so one Radeon can run the complete workflow. A later NVIDIA provider can register its available operations and use the same contract suite. Multi-GPU model sharding is outside this release.
+
+**Choosing a displayed line.** Start from the continuous reading. Store a disagreeing retry as an alternative unless a listener decision or corroborating evidence resolves the disagreement. During overlap, a matching original-mix and stem reading can support wording. Link ownership through a uniquely identifiable solo portion of the same phrase or a listener-confirmed mapping. Give timing its own check in the spotting stage. Where any of these are still disputed, publish the independently supported material and keep the competing hypotheses and audible interval in the bundle. The original channel mix remains available for listening.
+
+**Generation defaults.** Run the user-selected multilingual Whisper model on the uninterrupted track, with medium selected by default. Run the independent pyannote 3.1 scan on the same samples. Retry flagged overlaps with full large-v3 on the original mix, initially with up to two seconds of real context on either side. Keep the detected core distinct from retry context. Offer optional SepFormer WHAMR review for bounded two-voice excerpts, retaining both stems and their ASR alongside the original. If an optional refinement fails, retain the continuous evidence and explain the missing refinement in the result. A failed required scan stops publication. Apply Sudachi to Japanese and use segment-level grouping for other supported track languages.
+
+## Ordered build tasks
+
+Complete the rows in order. Points estimate relative effort. Every row names a deliverable and a check to write with it. Totals are for planning and carry no time conversion. If a row grows to **13**, split it in this plan and the progress ledger into independently testable tasks of 8 points or fewer before starting it.
+
+| ID | Points | Deliverable | Test or acceptance evidence required in that commit |
+| --- | ---: | --- | --- |
+| P00 | 1 | Capture this plan and initialize the progress ledger. | Check task IDs, estimates, matching ledger rows and local research links. Run the repository baseline. |
+| P01 | 5 | Define typed domain values for clocks, sources, ASR observations, voice turns, editorial decisions, phrases, layout and review findings. | Construct a wordless turn, two simultaneous owners, a correction and an invalid raw timestamp. Verify that each can be represented independently. |
+| P02 | 5 | Define the generation, replay, compute and adapter contracts above, including required-stage failure and optional-stage diagnostics. Supply fakes and a shared contract suite. | Exercise an entire request and replay using fakes. Import the core without GTK or ML libraries. Check required failure leaves the publisher untouched. **Interface milestone before production behavior.** |
+| P03 | 5 | Implement the provider registry and per-stage device resolution. Read stage preferences from a documented TOML compute configuration. | Bind two stages to different fake GPUs, reorder equal-name devices across runtimes, and reject a missing or incompatible selection. Register a second test provider without editing the use case. |
+| P04 | 5 | Freeze the legacy timing baseline and build an offline scoring fixture from the research cases. Keep listener references separate from runtime inputs. | Test the scorer with a missing phrase, a wrongly labeled speaker, an abstention, and a line with a correct onset but late release. Record baseline scores before changing generation. |
+| P05 | 8 | Implement track probing, original-channel audio retention, mono preparation, crop mapping and conversion to playback time. | Test nonzero media start, delayed audio, two audio streams, 8-to-16 kHz conversion and a crop crossing the media end. Verify the chosen track with a real multitrack file. |
+| P06 | 5 | Implement AMD Vulkan discovery, binding and verification for the Whisper subprocess. | Run the provider contract with reordered Vulkan indices and visibility restrictions. On the Radeon, perform a tiny-model smoke test and record the actual Vulkan device. |
+| P07 | 5 | Implement continuous whisper.cpp full-JSON ASR and model resolution, including full large-v3 for retries. Record raw run settings and checkpoint identity. | Parse Unicode pieces, control tokens, leading spaces, missing or inverted times and points tied to another decode. Verify the baseline receives one uninterrupted source. |
+| P08 | 5 | Package the isolated AMD ROCm worker, its versioned request/response interface, capability check and setup instructions. | Exercise missing interpreter, inaccessible weights and wrong device. Run a real probe against the pinned research stack. Confirm diagnostics identify the setup step and credentials stay out of logs and bundles. |
+| P09 | 5 | Implement required whole-track diarization and compute per-voice coverage, simultaneous activity and uncovered time on the recording clock. | Run the scanner contract. Test RTTM onset plus duration, adjacent and nested turns, repeated IDs, empty results and a worker crash. Distinguish successful silence from failed analysis. |
+| P10 | 5 | Schedule contextual original-mix retries for flagged intervals. Map each hypothesis back to its source and preserve continuous ASR. | Test an overlap near each recording edge, intersecting retry windows and a failed retry. Confirm surrounding dialogue survives and padded audio never expands the detected overlap. |
+| P11 | 5 | Add opt-in SepFormer listening evidence and optional large-v3 ASR on both stems. Start with the tested two-voice, at-most-12-second core and bounded real context. | Check 8 kHz stem origins and delays, swapped columns between excerpts, missing stems and crowded cores. Verify the mix and disputed readings survive all cases. |
+| P12 | 5 | Adapt the earlier Sudachi grouping to join exact surface spans to Whisper text. Protect particles, predicates, contractions and late negation when proposing cuts. | Reconstruct leading spaces, multi-character pieces and repeated surfaces exactly. Test `できない`, `食べちゃった`, a proposed break inside a piece and the non-Japanese grouping path. |
+| P13 | 8 | Reconcile phrase candidates and voice evidence. Keep confirmed listener decisions, competing readings and unknown owners addressable. Allow automatic solo attribution where one voice exclusively covers the anchored phrase. | Test A/B/B against a merged cluster, recurrent voices, an ambiguous overlap, a wordless second voice and a verified correction. Show that matching words on a stem leave ownership open until independent voice evidence resolves it. |
+| P14 | 8 | Spot each phrase using validated anchors. Choose onset and release independently. Split internally only at a linguistically acceptable edge with usable timing on both sides. If an edge fails, keep the wider supported phrase or record it for review. | Test early entry, delayed release, a short reply, silence, a late negative, backwards pieces and end-of-media overrun. Verify no fixed tail, six-second cap or cumulative delay. |
+| P15 | 5 | Sweep accepted phrase starts and ends to produce active screen states, stable lanes and neutral labels where supported. Flag crowding and combined reading demand. | Check A alone → A+B → B alone → clear, same-onset voices, simultaneous exit/entry, and a third intelligible voice. Preserve the continuing lane and all supported text. |
+| P16 | 5 | Implement SRT and ASS writers over the same cue plan. SRT emits active text at each change. ASS uses fixed lanes for independent phrase intervals. | Parse both formats back, including Unicode, literal ASS markup and boundaries near export precision. Render an overlap fixture with libass to check the continuing line stays put. |
+| P17 | 8 | Implement the versioned evidence ZIP and headless replay. Include a manifest, original-channel listening audio, available stems, observations, run provenance, decisions and review reasons. Expose a documented replay command accepting an optional corrections file. | Reproduce byte-identical subtitle files offline from a relocated bundle. Apply one listener correction and trace the changed cue. Check damaged or unsupported bundles produce actionable errors. |
+| P18 | 5 | Publish all three completed artifacts beside the video. Stage locally, serialize publications for the same destination and recover an interrupted replacement before a retry. | Inject failures at each replacement, start competing publications and retry. Verify the previous complete set can be recovered and success always identifies one complete run. |
+| P19 | 5 | Wire the generation use case to production adapters in the launcher. Preflight required capabilities before extraction or ASR. Keep stage progress, resource cleanup and failure policy in the application layer. | Integration-test the normal request, required scan failure, optional retry failure and repeat generation. Exercise a split-device job through the same entry point as a one-device job. |
+| P20 | 3 | Connect GTK to the new result. Preserve file, track and baseline-model selection. Expose optional stem analysis, output paths, review counts and actionable setup errors. Update usage docs. | Test the presenter headlessly. Smoke-test GTK worker completion, main-thread updates, missing speaker setup and retry after setup. Capture the visible change for review. |
+| P21 | 8 | Run the paired accuracy and hardware acceptance below. Document results and remaining unresolved scenes in the progress ledger. | Extend the regression set for defects found, run both offline and real-media checks, and record automatic and corrected results separately. |
+
+## Test, commit and resume discipline
+
+For **each subtask**, write or extend its named test as the behavior is built. Run the focused test and the full commands below. Keep routine unit tests independent of a display, downloads, private media, media binaries and GPUs. Put real-media and hardware checks in an explicit integration path. Complete a row's specified live check before closing that row.
+
+```sh
+uv lock --check
+uv run --locked python -m unittest discover -s tests
+uv run --locked python -m compileall -q yomisub.py yomisub tests
+```
+
+Update [progress.md](progress.md) with test commands, outcomes and relevant evidence. Commit that row's work, tests and ledger entry together using its ID and a short subject. Verify the commit exists before starting the next row. Use its unique subject as the ledger reference so the commit can record its own completion. If a test fails, keep the row open and fix it before advancing. Record blockers and plan changes explicitly. After autocompaction, re-read `docs/build-plan/plan.md`, then reconcile the ledger, Git history, workspace and later user instructions. Carry this plan path in every handoff.
+
+## Release acceptance
+
+| Case | What must be demonstrated |
+| --- | --- |
+| Ordinary dialogue and the S01E03 fight | Retain the checked phrases, including `こうします／そう／たえられる`. Score automatic owners against the listener's A/B/B, and verify that importing those corrections overrides the merged cluster on replay. Preserve the S01E01 recurring voice and uncertain aside. |
+| Same-onset, staggered and alternating controls | Score overlap detection against the constructed waveform intervals. Score phrase onset and release against separately annotated speech. Check for false overlaps in the alternating control. On supported staggered phrases inspect both exports throughout entry, coactivity and release. |
+| S01E10 interruption and crowded dialogue | Retain the repeated `まって`, the competing pressure-phrase readings when observed, and the localized overlap. Leave disputed edges reviewable. Distinguish missed overlaps, missing words and misattributions. Verify a third supported phrase survives layout. |
+| Theme song, silence and hallucinated dialogue | Keep the verified 19–29 s instrumental break clear. Preserve the reported chorus after 78 s as unresolved where words lack support. Evaluate a gap, spurious speech and an honest abstention as distinct outcomes. |
+| End-to-end and hardware | Generate all three artifacts via GTK from a short language-tagged, multitrack video with `tiny`. Repeat quality cases with medium and the required speaker scan. Record effective AMD devices, stage times, peak memory where available, and replay results. Exercise two real GPUs when available and distinguish simulated placement from hardware verification. |
+
+Compare the new automatic run to the frozen legacy output on the same tracks and model. Report per-scene verified phrase recovery, wrong and unresolved owners, overlap hits/misses/false positives, and onset and release errors on annotated phrases. Report matched counts and missing phrases beside timing errors so dropping difficult lines cannot improve the score invisibly. Keep uncertain natural boundaries unscored.
+
+On the same matched phrases require lower median absolute error for onset or release, with the other median no worse, and preserve verified baseline phrase coverage. Require correct automatic attribution on a checked multi-speaker exchange, detection of a reference-backed overlap, and a correctly attributed overlapping display when wording, ownership and timing are supported. Report automatic and corrected-display results separately. Keep acceptance open on a failed gate. Add a regression test and fix the failure. Apply the task-splitting rule if the remaining work reaches 13 points.
