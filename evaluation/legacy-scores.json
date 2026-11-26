@@ -1,0 +1,212 @@
+{
+  "S01E01": {
+    "king-square": {
+      "recovered": true,
+      "display_ms": [
+        12940,
+        17900
+      ],
+      "ownership": "unavailable"
+    },
+    "free-drinks": {
+      "recovered": true,
+      "display_ms": [
+        32020,
+        37260
+      ],
+      "ownership": "unavailable"
+    }
+  },
+  "S01E03": {
+    "koushimasu": {
+      "recovered": true,
+      "display_ms": [
+        44680,
+        46460
+      ],
+      "ownership": "unavailable"
+    },
+    "sou": {
+      "recovered": true,
+      "display_ms": [
+        45960,
+        48460
+      ],
+      "ownership": "unavailable"
+    },
+    "taerareru": {
+      "recovered": true,
+      "display_ms": [
+        47960,
+        50460
+      ],
+      "ownership": "unavailable"
+    }
+  },
+  "S01E10": {
+    "repeated-wait": {
+      "recovered": true,
+      "display_ms": [
+        20000,
+        22500
+      ],
+      "ownership": "unavailable"
+    },
+    "pressure-root": {
+      "recovered": true,
+      "display_ms": [
+        22000,
+        24500
+      ],
+      "ownership": "unavailable"
+    }
+  },
+  "S01E10-multi-speakers": {},
+  "S01E02": {},
+  "serial": {
+    "king-1": {
+      "recovered": true,
+      "display_ms": [
+        0,
+        5000
+      ],
+      "ownership": "unavailable"
+    },
+    "drinks-1": {
+      "recovered": true,
+      "display_ms": [
+        4500,
+        10500
+      ],
+      "ownership": "unavailable"
+    },
+    "king-2": {
+      "recovered": true,
+      "display_ms": [
+        12500,
+        17000
+      ],
+      "ownership": "unavailable"
+    },
+    "drinks-2": {
+      "recovered": true,
+      "display_ms": [
+        16500,
+        22500
+      ],
+      "ownership": "unavailable"
+    }
+  },
+  "mix": {
+    "king-1": {
+      "recovered": true,
+      "display_ms": [
+        0,
+        4900
+      ],
+      "ownership": "unavailable"
+    },
+    "drinks-1": {
+      "recovered": true,
+      "display_ms": [
+        4400,
+        10400
+      ],
+      "ownership": "unavailable"
+    },
+    "king-2": {
+      "recovered": true,
+      "display_ms": [
+        12400,
+        15900
+      ],
+      "ownership": "unavailable"
+    },
+    "drinks-2": {
+      "recovered": true,
+      "display_ms": [
+        16400,
+        20900
+      ],
+      "ownership": "unavailable"
+    }
+  },
+  "together": {
+    "king-1": {
+      "recovered": false
+    },
+    "drinks-1": {
+      "recovered": true,
+      "display_ms": [
+        0,
+        6000
+      ],
+      "ownership": "unavailable"
+    }
+  },
+  "ingcrowd01-first23": {
+    "a1": {
+      "recovered": true,
+      "display_ms": [
+        0,
+        6000
+      ],
+      "error_ms": [
+        -3470,
+        1560
+      ],
+      "ownership": "unavailable"
+    },
+    "a40": {
+      "recovered": false
+    },
+    "a2": {
+      "recovered": false
+    },
+    "a3": {
+      "recovered": true,
+      "display_ms": [
+        0,
+        6000
+      ],
+      "error_ms": [
+        -7980,
+        -3360
+      ],
+      "ownership": "unavailable"
+    },
+    "a41": {
+      "recovered": true,
+      "display_ms": [
+        10000,
+        11800
+      ],
+      "error_ms": [
+        -160,
+        1050
+      ],
+      "ownership": "unavailable"
+    },
+    "a4": {
+      "recovered": true,
+      "display_ms": [
+        11300,
+        15500
+      ],
+      "error_ms": [
+        -100,
+        870
+      ],
+      "ownership": "unavailable"
+    },
+    "a42": {
+      "recovered": false
+    },
+    "a5": {
+      "recovered": false
+    },
+    "a43": {
+      "recovered": false
+    }
+  }
+}

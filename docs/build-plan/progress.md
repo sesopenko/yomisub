@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P04](tasks/P04.md).** 16 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P05](tasks/P05.md).** 21 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -8,7 +8,7 @@
 | P01 | 5 | Complete | Domain values |
 | P02 | 5 | Complete | Application, model and compute contracts with fakes |
 | P03 | 5 | Complete | Provider registration and per-stage GPU placement |
-| P04 | 5 | Pending | Baseline fixtures and accuracy scoring |
+| P04 | 5 | Complete | Baseline fixtures and accuracy scoring |
 | P05 | 8 | Pending | Selected-track audio and recording clock |
 | P06 | 5 | Pending | AMD Vulkan device binding |
 | P07 | 5 | Pending | Continuous Whisper observations |
@@ -123,6 +123,14 @@ Commit subject is `P02 Define generation and replay contracts`.
 A registered provider resolves physical IDs on each bind. A TOML override selects a provider and device by stage and ambiguous choices identify the available bindings. `uv run --locked python -m unittest discover -s tests -p test_compute.py` passed 3 tests covering reordering, extension and invalid configuration. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (30 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed. Hardware verification is scheduled in P06 and P08.
 
 Commit subject is `P03 Resolve model stages to physical compute devices`.
+
+### P04 — Freeze legacy subtitle recovery and independent timing scores
+
+Ran the original 5bf2697 generator with the verified medium checkpoint on all five research scenes, three controls and a 23-second evaluation-only IngCrowd conversation excerpt. Local final SRTs and device logs are under `gitignored-inputs/evaluation/legacy/`. The 20 of 26 recovered reference IDs include four of nine manually timed utterances. Their median absolute onset and release errors were 1815 ms and 1305 ms. Legacy speaker and detector metrics are unavailable. [Frozen scores and reproduction](../../evaluation/README.md)
+
+`uv run --locked python -m unittest discover -s tests -p test_evaluation.py` passed seven scorer tests. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (37 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed. Re-scoring the ignored final SRTs matched the committed JSON exactly.
+
+Commit subject is `P04 Freeze legacy subtitle recovery and independent timing scores`.
 
 ## Updating this ledger
 

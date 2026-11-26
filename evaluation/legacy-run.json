@@ -1,0 +1,31 @@
+{
+  "revision": "5bf269755617a975d4c69c1e6ddb19d9cdf22415",
+  "whisper_source": "231638a0717b7822784297e5980965ffcec05810",
+  "whisper_executable_sha256": "1ebd9cb6b1491da42ade06f6e842838343f6f1c10519c07855cdf276b9c14f5e",
+  "medium_sha256": "6c14d5adee5f86394037b4e4e8b59f1673b6cee10e3cf0b11bbdbee79c156208",
+  "effective_backend": "Vulkan0, AMD Radeon Graphics (RADV GFX1200)",
+  "language": "ja",
+  "invocation": [
+    "whisper-cli",
+    "--model",
+    "<ggml-medium.bin>",
+    "--file",
+    "<mono16k.wav>",
+    "--language",
+    "ja",
+    "--output-srt",
+    "--output-file",
+    "<stem>"
+  ],
+  "final_srt_sha256": {
+    "S01E01": "1ce2820dd8a6a32634d2d2bc05481f4464878200f4426daf2cfc9170d903c9c3",
+    "S01E03": "a97f9c95e288a80a4936fdd45216135b2a11ab36a52497e96d05b23c20669c72",
+    "S01E10": "aefd0864b9d5ec30c60960bb9c30549641379da0fd0823406f47207b9ca2e2dc",
+    "S01E10-multi-speakers": "fc927d4b369722b2392610cad2583fb86b5a0d4b88ff3a3c410496d06b352a01",
+    "S01E02": "93d2f84d019b8f232714650fce85d0fa90d734a7f9ecd4754893639e41bd8afd",
+    "serial": "236c7f2e818a591835158f10027fd65cefe31193cbe808011ffbfa63a757e5ad",
+    "mix": "a6be76108bb15b646113e7b2643f78014876ed47d7c1e9efc6346112fd13a145",
+    "together": "d831ed75271a8c341795bfd46486660496cdb89788cd84cf3a234f5ac715916b",
+    "ingcrowd01-first23": "1f65e00d90601fceeb8813c44d0c11c9f2bf444f9c6793dffeb8d46ff7cd2360"
+  }
+}

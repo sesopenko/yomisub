@@ -1,0 +1,492 @@
+{
+  "schema": 1,
+  "cases": {
+    "S01E01": {
+      "local_input": "examples/S01E01.mp4",
+      "sha256": "48db422f01f3b4b8b96cde97d7e12c4306783a1b3ea1cfc478a11221977b5e00",
+      "stream_index": 1,
+      "audio_ordinal": 0,
+      "reference_source": "docs/speaker-separation-findings.md and docs/overlap-routing-poc.md (listener reports)",
+      "notes": "Score the checked king/square and free-drink wording. Review the group/statue continuation and homophone separately. The unverified spelling of the 39–40 s aside has no lexical reference. Its voice recurs from 25–30 s.",
+      "waveform_overlap_ms": null,
+      "verified_no_dialogue_ms": [],
+      "phrases": [
+        {
+          "id": "king-square",
+          "forms": [
+            "王様が広場に",
+            "おうさまが広場に"
+          ],
+          "owner": "king-voice",
+          "window_ms": [
+            6000,
+            23000
+          ]
+        },
+        {
+          "id": "free-drinks",
+          "forms": [
+            "こうしてただ酒",
+            "こうしてタダ酒",
+            "こうしてただざけ"
+          ],
+          "owner": "drinks-voice",
+          "window_ms": [
+            29000,
+            40000
+          ]
+        }
+      ]
+    },
+    "S01E03": {
+      "local_input": "examples/S01E03.mp4",
+      "sha256": "b33c33fb85c8396c2d17f7debfe132e28a67d3c0490f30f3df00d5d1b1931c70",
+      "stream_index": 1,
+      "audio_ordinal": 0,
+      "reference_source": "docs/speaker-separation-findings.md and docs/overlap-routing-poc.md (listener reports)",
+      "notes": "The listener confirmed A/B/B. The 0–10 s opening contains effects.",
+      "waveform_overlap_ms": null,
+      "verified_no_dialogue_ms": [
+        [
+          0,
+          10000
+        ]
+      ],
+      "phrases": [
+        {
+          "id": "koushimasu",
+          "forms": [
+            "こうします"
+          ],
+          "owner": "A",
+          "window_ms": [
+            42000,
+            52000
+          ]
+        },
+        {
+          "id": "sou",
+          "forms": [
+            "そう"
+          ],
+          "owner": "B",
+          "window_ms": [
+            42000,
+            52000
+          ]
+        },
+        {
+          "id": "taerareru",
+          "forms": [
+            "たえられる",
+            "耐えられる"
+          ],
+          "owner": "B",
+          "window_ms": [
+            42000,
+            52000
+          ]
+        }
+      ]
+    },
+    "S01E10": {
+      "local_input": "examples/S01E10.mp4",
+      "sha256": "26bab89223fe4606e776267efe72504db1a1d5e6c94192b4315e61ca64197518",
+      "stream_index": 1,
+      "audio_ordinal": 0,
+      "reference_source": "docs/speaker-separation-findings.md and docs/overlap-routing-poc.md (listener reports)",
+      "notes": "One interruption was heard around 25–28 s. There is no independent exact event interval. A repeated wait is one exchange. The final pressure vowel is disputed. Score the pressure root separately from its ending.",
+      "waveform_overlap_ms": null,
+      "verified_no_dialogue_ms": [],
+      "phrases": [
+        {
+          "id": "repeated-wait",
+          "forms": [
+            "待って待って",
+            "まってまって"
+          ],
+          "owner": "waiting-voice",
+          "window_ms": [
+            18000,
+            30000
+          ]
+        },
+        {
+          "id": "pressure-root",
+          "forms": [
+            "圧力に屈し",
+            "あつりょくにくっし"
+          ],
+          "owner": "pressure-voice",
+          "window_ms": [
+            18000,
+            30000
+          ]
+        }
+      ]
+    },
+    "S01E10-multi-speakers": {
+      "local_input": "examples/S01E10-multi-speakers.mp4",
+      "sha256": "21c3ebdb15548d5b310ce3fce09eed92658ef58c6718d898d50eeff2ee77f59b",
+      "stream_index": 1,
+      "audio_ordinal": 0,
+      "reference_source": "docs/whisper-input-findings.md",
+      "notes": "Several interruptions were heard. Their exact number, edges and wording are unknown. Inspect detector misses qualitatively.",
+      "waveform_overlap_ms": null,
+      "verified_no_dialogue_ms": [],
+      "phrases": []
+    },
+    "S01E02": {
+      "local_input": "examples/S01E02.mp4",
+      "sha256": "164502bc0ca35f8e6b93f94bab368991373bfc8153409eea572bab3c2437a032",
+      "stream_index": 1,
+      "audio_ordinal": 0,
+      "reference_source": "docs/whisper-input-findings.md",
+      "notes": "Instrumental break about 19–29 s. Chorus after 78 s is audible with unverified wording. Evaluate an unresolved chorus separately from silence.",
+      "waveform_overlap_ms": null,
+      "verified_no_dialogue_ms": [
+        [
+          19000,
+          29000
+        ]
+      ],
+      "phrases": []
+    },
+    "serial": {
+      "local_input": "whisper-feasibility-2026-11-19/serial.wav",
+      "sha256": "0910db4212d5353857cff5445a424e6daf42fdb1912103a91ad1e053888c3335",
+      "stream_index": 0,
+      "audio_ordinal": 0,
+      "reference_source": "docs/speaker-separation-findings.md and docs/overlap-routing-poc.md (listener reports); local feasibility manifest golden_samples_ms documents waveform placement.",
+      "notes": "Independent voice identity follows the two distinct source utterances. Placement supplies no phrase edges.",
+      "waveform_overlap_ms": [],
+      "verified_no_dialogue_ms": [],
+      "phrases": [
+        {
+          "id": "king-1",
+          "forms": [
+            "王様が広場に",
+            "おうさまが広場に"
+          ],
+          "owner": "king-voice",
+          "window_ms": [
+            0,
+            9000
+          ]
+        },
+        {
+          "id": "drinks-1",
+          "forms": [
+            "こうしてただ酒",
+            "こうしてタダ酒",
+            "こうしてただざけ"
+          ],
+          "owner": "drinks-voice",
+          "window_ms": [
+            0,
+            12000
+          ]
+        },
+        {
+          "id": "king-2",
+          "forms": [
+            "王様が広場に",
+            "おうさまが広場に"
+          ],
+          "owner": "king-voice",
+          "window_ms": [
+            12000,
+            24000
+          ]
+        },
+        {
+          "id": "drinks-2",
+          "forms": [
+            "こうしてただ酒",
+            "こうしてタダ酒",
+            "こうしてただざけ"
+          ],
+          "owner": "drinks-voice",
+          "window_ms": [
+            12000,
+            24000
+          ]
+        }
+      ]
+    },
+    "mix": {
+      "local_input": "whisper-feasibility-2026-11-19/mix.wav",
+      "sha256": "85c5ceb3ca98e4395c0930403aeba60c08cb1f6bb7516288770ab1f9497a42ff",
+      "stream_index": 0,
+      "audio_ordinal": 0,
+      "reference_source": "docs/speaker-separation-findings.md and docs/overlap-routing-poc.md (listener reports); local feasibility manifest golden_samples_ms documents waveform placement.",
+      "notes": "Independent voice identity follows the two distinct source utterances. Placement supplies no phrase edges.",
+      "waveform_overlap_ms": [
+        [
+          14000,
+          16375
+        ]
+      ],
+      "verified_no_dialogue_ms": [],
+      "phrases": [
+        {
+          "id": "king-1",
+          "forms": [
+            "王様が広場に",
+            "おうさまが広場に"
+          ],
+          "owner": "king-voice",
+          "window_ms": [
+            0,
+            9000
+          ]
+        },
+        {
+          "id": "drinks-1",
+          "forms": [
+            "こうしてただ酒",
+            "こうしてタダ酒",
+            "こうしてただざけ"
+          ],
+          "owner": "drinks-voice",
+          "window_ms": [
+            0,
+            12000
+          ]
+        },
+        {
+          "id": "king-2",
+          "forms": [
+            "王様が広場に",
+            "おうさまが広場に"
+          ],
+          "owner": "king-voice",
+          "window_ms": [
+            12000,
+            24000
+          ]
+        },
+        {
+          "id": "drinks-2",
+          "forms": [
+            "こうしてただ酒",
+            "こうしてタダ酒",
+            "こうしてただざけ"
+          ],
+          "owner": "drinks-voice",
+          "window_ms": [
+            12000,
+            24000
+          ]
+        }
+      ]
+    },
+    "together": {
+      "local_input": "whisper-feasibility-2026-11-19/together.wav",
+      "sha256": "76ee83746ba106850416d8a357f1fbe5508885106abbff54476f757ae5f8a91f",
+      "stream_index": 0,
+      "audio_ordinal": 0,
+      "reference_source": "docs/speaker-separation-findings.md and docs/overlap-routing-poc.md (listener reports); local feasibility manifest golden_samples_ms documents waveform placement.",
+      "notes": "Independent voice identity follows the two distinct source utterances. Placement supplies no phrase edges.",
+      "waveform_overlap_ms": [
+        [
+          500,
+          3875
+        ]
+      ],
+      "verified_no_dialogue_ms": [],
+      "phrases": [
+        {
+          "id": "king-1",
+          "forms": [
+            "王様が広場に",
+            "おうさまが広場に"
+          ],
+          "owner": "king-voice",
+          "window_ms": [
+            0,
+            9000
+          ]
+        },
+        {
+          "id": "drinks-1",
+          "forms": [
+            "こうしてただ酒",
+            "こうしてタダ酒",
+            "こうしてただざけ"
+          ],
+          "owner": "drinks-voice",
+          "window_ms": [
+            0,
+            12000
+          ]
+        }
+      ]
+    },
+    "ingcrowd01-first23": {
+      "local_input": "evaluation/ingcrowd/ingcrowd01-first23.wav",
+      "sha256": "02929195cad43f163a842839915a87a6290006b23c9b372a8c9d40f1741e924b",
+      "stream_index": 0,
+      "audio_ordinal": 0,
+      "reference_source": "IngCrowd Japanese Themed Casual Conversation Corpus, dialogue 01, official ELAN",
+      "notes": "Every complete manual utterance within the first 23 s of the mixed recording. The authors publish millisecond labels without an individual boundary error estimate. Strict orthographic matches ignore punctuation and spacing.",
+      "waveform_overlap_ms": null,
+      "verified_no_dialogue_ms": [],
+      "phrases": [
+        {
+          "id": "a1",
+          "forms": [
+            "ねえあのさ"
+          ],
+          "owner": "speaker_1",
+          "window_ms": [
+            0,
+            23000
+          ],
+          "speech_edges_ms": [
+            3470,
+            4440
+          ],
+          "edge_source": "IngCrowd manual ELAN slots, a1",
+          "uncertainty_ms": null
+        },
+        {
+          "id": "a40",
+          "forms": [
+            "うん。うんうん。"
+          ],
+          "owner": "speaker_2",
+          "window_ms": [
+            0,
+            23000
+          ],
+          "speech_edges_ms": [
+            4750,
+            5630
+          ],
+          "edge_source": "IngCrowd manual ELAN slots, a40",
+          "uncertainty_ms": null
+        },
+        {
+          "id": "a2",
+          "forms": [
+            "あのさ、この前"
+          ],
+          "owner": "speaker_1",
+          "window_ms": [
+            0,
+            23000
+          ],
+          "speech_edges_ms": [
+            5980,
+            7460
+          ],
+          "edge_source": "IngCrowd manual ELAN slots, a2",
+          "uncertainty_ms": null
+        },
+        {
+          "id": "a3",
+          "forms": [
+            "までお盆休みだったじゃん？"
+          ],
+          "owner": "speaker_1",
+          "window_ms": [
+            0,
+            23000
+          ],
+          "speech_edges_ms": [
+            7980,
+            9360
+          ],
+          "edge_source": "IngCrowd manual ELAN slots, a3",
+          "uncertainty_ms": null
+        },
+        {
+          "id": "a41",
+          "forms": [
+            "そうだね。"
+          ],
+          "owner": "speaker_2",
+          "window_ms": [
+            0,
+            23000
+          ],
+          "speech_edges_ms": [
+            10160,
+            10750
+          ],
+          "edge_source": "IngCrowd manual ELAN slots, a41",
+          "uncertainty_ms": null
+        },
+        {
+          "id": "a4",
+          "forms": [
+            "なんかどっか、行ったりとかなんかこうやってた？"
+          ],
+          "owner": "speaker_1",
+          "window_ms": [
+            0,
+            23000
+          ],
+          "speech_edges_ms": [
+            11400,
+            14630
+          ],
+          "edge_source": "IngCrowd manual ELAN slots, a4",
+          "uncertainty_ms": null
+        },
+        {
+          "id": "a42",
+          "forms": [
+            "いやー普通になんか実家帰って"
+          ],
+          "owner": "speaker_2",
+          "window_ms": [
+            0,
+            23000
+          ],
+          "speech_edges_ms": [
+            15570,
+            18350
+          ],
+          "edge_source": "IngCrowd manual ELAN slots, a42",
+          "uncertainty_ms": null
+        },
+        {
+          "id": "a5",
+          "forms": [
+            "うんうん。"
+          ],
+          "owner": "speaker_1",
+          "window_ms": [
+            0,
+            23000
+          ],
+          "speech_edges_ms": [
+            18820,
+            19320
+          ],
+          "edge_source": "IngCrowd manual ELAN slots, a5",
+          "uncertainty_ms": null
+        },
+        {
+          "id": "a43",
+          "forms": [
+            "家族とゆっくり過ごすぐらいしかしてないかなあ。"
+          ],
+          "owner": "speaker_2",
+          "window_ms": [
+            0,
+            23000
+          ],
+          "speech_edges_ms": [
+            19010,
+            22900
+          ],
+          "edge_source": "IngCrowd manual ELAN slots, a43",
+          "uncertainty_ms": null
+        }
+      ]
+    }
+  }
+}
