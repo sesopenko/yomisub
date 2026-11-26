@@ -144,6 +144,12 @@ class Grouping:
     surfaces: tuple[TextSpan, ...]
     cut_offsets: tuple[int, ...]
     strategy: str
+    wrap_offsets: tuple[int, ...] = ()
+    piece_ids: tuple[tuple[str, ...], ...] = ()
+    tokenizer_version: str = ""
+    dictionary_version: str = ""
+    split_mode: str = ""
+    diagnostic: str | None = None
 
 
 class Grouper(Protocol):

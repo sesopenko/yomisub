@@ -8,6 +8,8 @@ dependencies = [
     "pycountry",
     "PyGObject>=3.54.5,<3.55",
     "srt",
+    "SudachiPy==0.7.0",
+    "SudachiDict-core==20261015",
 ]
 
 [tool.uv]

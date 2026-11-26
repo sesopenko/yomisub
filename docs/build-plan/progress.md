@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P12](tasks/P12.md).** 59 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P13](tasks/P13.md).** 64 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -16,7 +16,7 @@
 | P09 | 5 | Complete | Required diarization and activity measurements |
 | P10 | 5 | Complete | Contextual retries on the original mix |
 | P11 | 5 | Complete | Optional SepFormer listening and stem ASR |
-| P12 | 5 | Pending | Japanese surface alignment and grouping |
+| P12 | 5 | Complete | Japanese surface alignment and grouping |
 | P13 | 8 | Pending | Candidate reconciliation and attribution |
 | P14 | 8 | Pending | Phrase onset, release and timed cuts |
 | P15 | 5 | Pending | Active phrases and stable speaker lanes |
@@ -173,6 +173,12 @@ Commit subject is `P10 Retain an original-mix retry for every overlap core`.
 The opt-in S01E10 run used full large-v3 `ad82bf6a` for the contextual mix and both stem decodes. SepFormer WHAMR `9950fd80` ran on ROCm, with Whisper on Vulkan, both PCI `0000:0f:00.0`. Both native stems held 36184 frames at 8 kHz and both analysis copies held 72368 frames at 16 kHz. All four mapped to recording sample 387536 at 16 kHz (24.221 s). Output, three run IDs and audio are in `gitignored-inputs/evaluation/stem-smoke/`. Source columns carry no speaker assignment. Three focused `test_stems.py` tests, `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (57 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P11 Keep optional local stems and their independent ASR evidence`.
+
+### P12 — Join Japanese morphology to exact Whisper surfaces
+
+Pinned SudachiPy 0.7.0 and the 20261015 Core dictionary. Grouping records split mode C, versions, exact surface spans and lexical piece links. Wrap suggestions may fall inside a piece, while timed candidates require usable adjacent pieces. Whole-segment fallback keeps mismatched or non-Japanese input intact. The three focused `test_grouping.py` tests, `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (60 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P12 Join Japanese morphology to exact Whisper surfaces`.
 
 ## Updating this ledger
 
