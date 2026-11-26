@@ -1,11 +1,11 @@
 # Subtitle build progress
 
-**Next task is P01 — Define domain values.** The planning checkpoint accounts for 1 of 119 points. All 118 implementation and acceptance points are pending. [Authoritative plan](plan.md) · [P01 task brief](tasks/P01.md)
+**Next task is [P02](tasks/P02.md).** 6 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
 | P00 | 1 | Complete | Capture the plan and initialize progress |
-| P01 | 5 | Pending | Domain values |
+| P01 | 5 | Complete | Domain values |
 | P02 | 5 | Pending | Application, model and compute contracts with fakes |
 | P03 | 5 | Pending | Provider registration and per-stage GPU placement |
 | P04 | 5 | Pending | Baseline fixtures and accuracy scoring |
@@ -105,6 +105,12 @@ PY
 Both rounds were planning reviews. P01 is the next implementation task. The live accuracy gate requires independently verified speech-edge annotations. The research control placement data measures waveform overlap.
 
 Verification passed for all 22 task files, prerequisite order, point totals and source links. The TOML example parsed, the rational sample-clock example checked out, and the S01E10 coactivity interval matched the tracked RTTM. The lockfile check, all 18 unit tests and compilation passed. Commit subject is `P00 Resolve architect and implementer review findings`.
+
+### P01 — Model recording clocks and subtitle evidence
+
+Added immutable recording and source clocks, raw observations, bounded intervals, editorial overlays and layout values. `uv run --locked python -m unittest discover -s tests -p test_domain.py` passed four tests including fractional resampling and invalid observation retention. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (22 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P01 Model recording clocks and subtitle evidence`.
 
 ## Updating this ledger
 
