@@ -4,6 +4,12 @@ This is the authoritative implementation plan. Build for a Japanese learner who 
 
 The current writer extends every cue by 0.5 seconds and caps it at six seconds. The replacement chooses the onset and release of each phrase from evidence. The routing experiment found all three test overlaps, yet recovered **zero of three** as two usable, correctly attributed lines. Keep continuous original-mix ASR as the baseline. Use a speaker scan to locate possible interruptions and contextual retries to gather additional readings. Score wording, timing and speaker assignment separately. [Whisper findings](../whisper-input-findings.md) · [Routing experiment](../overlap-routing-poc.md) · [Separation findings](../speaker-separation-findings.md) · [Japanese editorial brief](../japanese-subtitling-craft-for-yomisub.md)
 
+## Starting and resuming a task
+
+- **Before starting each task**, read `docs/build-plan/plan.md` and the task’s full Markdown brief at `docs/build-plan/tasks/<task-id>.md` from the working tree. Read the cited research for its implementation and acceptance checks. Mark the row `In progress` in `docs/build-plan/progress.md` and link the active brief at the top of the ledger before writing code or tests.
+- **After every context compression or restart**, use the ledger to identify the task in progress. Before resuming any implementation or verification, reread both `docs/build-plan/plan.md` and that task’s full Markdown brief from disk. Include both paths in every handoff and compaction summary. Use the summary to locate the files. The files themselves must be read again.
+- Reconcile the task’s acceptance checks with the ledger, Git history, working tree and later user instructions. Continue from the first unfinished step. If compression occurs between tasks, follow the start rule for the next pending row.
+
 ## Architecture and interfaces
 
 ```text
@@ -44,7 +50,7 @@ Replay(bundle, decisions) enters at recorded observations and uses the same plan
 
 ## Ordered build tasks
 
-Complete the rows in order. Open the linked task brief before starting a row and read the cited findings for its implementation and acceptance checks. The briefs identify experimental results, editorial guidance, and implementation choices. If a brief and its research source disagree about an observation, inspect the pinned run or recorded artifacts and document the discrepancy before using it as a reference. Keep unknown values open and mark any new technique or threshold as unvalidated until tested.
+Complete the rows in order. The briefs identify experimental results, editorial guidance, and implementation choices. If a brief and its research source disagree about an observation, inspect the pinned run or recorded artifacts and document the discrepancy before using it as a reference. Keep unknown values open and mark any new technique or threshold as unvalidated until tested.
 
 Points estimate relative effort. Every row names a deliverable and a check to write with it. If a row grows to **13**, split it into independently testable tasks of 8 points or fewer and update this index, the task briefs and the progress ledger before starting it.
 
@@ -83,7 +89,7 @@ uv run --locked python -m unittest discover -s tests
 uv run --locked python -m compileall -q yomisub.py yomisub tests
 ```
 
-Update the progress ledger with test commands, outcomes and relevant evidence. Commit that row's work, tests and ledger entry together using its ID and a short subject. Verify the commit exists before starting the next row. Use its unique subject as the ledger reference so the commit can record its own completion. If a test fails, keep the row open and fix it before advancing. Record blockers and plan changes explicitly. After autocompaction, re-read `docs/build-plan/plan.md` and the active task brief, then reconcile the ledger, Git history, workspace and later user instructions. Carry both plan and active task paths in every handoff. [Progress ledger](progress.md)
+Update the progress ledger with test commands, outcomes and relevant evidence. Commit that row's work, tests and ledger entry together using its ID and a short subject. Verify the commit exists before starting the next row. Use its unique subject as the ledger reference so the commit can record its own completion. If a test fails, keep the row open and fix it before advancing. Record blockers and plan changes explicitly. [Progress ledger](progress.md)
 
 ## Release acceptance
 

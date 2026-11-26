@@ -91,4 +91,6 @@ PY
 
 ## Updating this ledger
 
-For each row, record the behavior delivered, tests added, exact commands and outcomes, relevant live evidence, and the unique commit subject. Update the status, point summary and next task in the same commit as the work. Record failed checks under the open task and resolve them before continuing. After a restart or autocompaction, read `docs/build-plan/plan.md`, this ledger and the linked task brief. Check `git log` and the working tree before resuming.
+At task start, mark the row `In progress` and replace the next-task pointer at the top with a link to the active brief. After every context compression or restart, use that pointer to reread the full plan and active brief before continuing. [Starting and resuming a task](plan.md#starting-and-resuming-a-task)
+
+For each row, record the behavior delivered, tests added, exact commands and outcomes, relevant live evidence, and the unique commit subject. Record failed checks under the open task and resolve them before continuing. On completion, mark the row complete, update the point summary and identify the next pending task in the same commit as the work.
