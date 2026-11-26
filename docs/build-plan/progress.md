@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P13](tasks/P13.md).** 64 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P14](tasks/P14.md).** 72 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -17,7 +17,7 @@
 | P10 | 5 | Complete | Contextual retries on the original mix |
 | P11 | 5 | Complete | Optional SepFormer listening and stem ASR |
 | P12 | 5 | Complete | Japanese surface alignment and grouping |
-| P13 | 8 | Pending | Candidate reconciliation and attribution |
+| P13 | 8 | Complete | Candidate reconciliation and attribution |
 | P14 | 8 | Pending | Phrase onset, release and timed cuts |
 | P15 | 5 | Pending | Active phrases and stable speaker lanes |
 | P16 | 5 | Pending | SRT and ASS rendering |
@@ -179,6 +179,12 @@ Commit subject is `P11 Keep optional local stems and their independent ASR evide
 Pinned SudachiPy 0.7.0 and the 20261015 Core dictionary. Grouping records split mode C, versions, exact surface spans and lexical piece links. Wrap suggestions may fall inside a piece, while timed candidates require usable adjacent pieces. Whole-segment fallback keeps mismatched or non-Japanese input intact. The three focused `test_grouping.py` tests, `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (60 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P12 Join Japanese morphology to exact Whisper surfaces`.
+
+### P13 — Reconcile overlap readings and provisional speaker ownership
+
+Reconciliation keeps each candidate tied to its source segment, recording occurrence, core, alternatives and supporting evidence IDs. Four focused `test_reconcile.py` tests cover merged-cluster A/B/B corrections, solo continuation into overlap, supported wording with disputed ownership, and repeated versus padding-only readings. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (64 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P13 Reconcile overlap readings and provisional speaker ownership`.
 
 ## Updating this ledger
 

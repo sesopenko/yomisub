@@ -1,24 +1,12 @@
 """Contextual listening and ASR over detected overlap; continuous ASR stays independent."""
 
 from dataclasses import replace
-from fractions import Fraction
 
 from .activity import overlap_cores
 from .audio import ClockError, extract_crop
-from .domain import ReviewFinding, SampleInterval
+from .domain import ReviewFinding
+from .timing import anchored_interval
 from .ports import AudioFile, Refinement, Stage, StageError
-
-
-def anchored_interval(timing, source, clock):
-    if timing.start is None or timing.end is None:
-        return None
-    scale = {"milliseconds": Fraction(source.sample_rate, 1000),
-             "seconds": source.sample_rate, "samples": 1}[timing.unit]
-    left, right = timing.start * scale, timing.end * scale
-    if not source.leading_padding <= left < right <= source.frames - source.trailing_padding:
-        return None
-    a, b = (source.recording_sample(x, clock) for x in (left, right))
-    return SampleInterval(clock, a, b) if 0 <= a < b <= clock.frames else None
 
 
 def link_transcript(transcript, source, core):

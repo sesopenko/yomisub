@@ -158,6 +158,12 @@ class PhraseCandidate:
     evidence_ids: tuple[str, ...]
     interval: SampleInterval | None
     owners: tuple[Attribution, ...] = ()
+    source_id: str | None = None
+    segment_id: str | None = None
+    alternative_ids: tuple[str, ...] = ()
+    secondary: bool = False
+    wording_supported: bool = True
+    core_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
