@@ -1,13 +1,13 @@
 # Subtitle build progress
 
-**Next task is [P03](tasks/P03.md).** 11 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P04](tasks/P04.md).** 16 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
 | P00 | 1 | Complete | Capture the plan and initialize progress |
 | P01 | 5 | Complete | Domain values |
 | P02 | 5 | Complete | Application, model and compute contracts with fakes |
-| P03 | 5 | Pending | Provider registration and per-stage GPU placement |
+| P03 | 5 | Complete | Provider registration and per-stage GPU placement |
 | P04 | 5 | Pending | Baseline fixtures and accuracy scoring |
 | P05 | 8 | Pending | Selected-track audio and recording clock |
 | P06 | 5 | Pending | AMD Vulkan device binding |
@@ -117,6 +117,12 @@ Commit subject is `P01 Model recording clocks and subtitle evidence`.
 Application-owned ports and fake-driven generation/replay now share one planner and renderer. The shared binding, ASR and scanner assertions in `tests/adapter_contracts.py` also apply to P06, P07 and P09. A required scan failure stops publication and an optional failure preserves the baseline and distinct findings. `uv run --locked python -m unittest discover -s tests -p test_application.py` passed 5 tests. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (27 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P02 Define generation and replay contracts`.
+
+### P03 — Resolve model stages to physical compute devices
+
+A registered provider resolves physical IDs on each bind. A TOML override selects a provider and device by stage and ambiguous choices identify the available bindings. `uv run --locked python -m unittest discover -s tests -p test_compute.py` passed 3 tests covering reordering, extension and invalid configuration. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (30 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed. Hardware verification is scheduled in P06 and P08.
+
+Commit subject is `P03 Resolve model stages to physical compute devices`.
 
 ## Updating this ledger
 

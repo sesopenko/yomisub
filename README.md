@@ -87,3 +87,22 @@ uv run --locked python -m unittest discover -s tests
 This project is open source under the MIT License. See [LICENSE.txt](LICENSE.txt) for full details.
 
 © 2025 Sean Esopenko
+
+### Rebuild compute configuration
+
+The subtitle rebuild reads `yomisub/compute.toml` under `$XDG_CONFIG_HOME` (default
+`~/.config`). Configure a physical GPU by PCI address or provider-reported UUID.
+A stage can override the default device and select a provider. For example:
+
+```toml
+default_device = "pci:0000:03:00.0"
+
+[stages.diarization]
+provider = "amd-rocm"
+device = "pci:0000:0b:00.0"
+```
+
+The stages are `baseline_asr`, `retry_asr`, `diarization`, `separation`, and
+`stem_asr`. With no applicable preference, a sole compatible binding is selected.
+Multiple compatible bindings require an explicit choice. Runtime GPU ordinals
+are resolved separately by each provider when binding a stage.
