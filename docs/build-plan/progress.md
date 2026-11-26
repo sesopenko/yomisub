@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P18](tasks/P18.md).** 98 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P19](tasks/P19.md).** 103 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -22,7 +22,7 @@
 | P15 | 5 | Complete | Active phrases and stable speaker lanes |
 | P16 | 5 | Complete | SRT and ASS rendering |
 | P17 | 8 | Complete | Evidence bundle and offline replay |
-| P18 | 5 | Pending | Recoverable publication |
+| P18 | 5 | Complete | Recoverable publication |
 | P19 | 5 | Pending | Production generation workflow |
 | P20 | 3 | Pending | GTK workflow and user documentation |
 | P21 | 8 | Pending | Paired accuracy and hardware acceptance |
@@ -209,6 +209,12 @@ Commit subject is `P16 Render SRT screen states and independent ASS lanes`.
 Four focused `test_bundle.py` tests passed, including byte-identical SRT and ASS from a moved ZIP in a `python -S` subprocess, a length-changing correction, corrected edge, added second voice, interval note and explicit timed subdivision. Invalid edits and damaged evidence preserve existing files. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (77 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P17 Save relocatable evidence and replay listener corrections`.
+
+### P18 — Recover interrupted subtitle publication under a destination lock
+
+Three focused `test_publication.py` tests passed. They injected each of the three replacement failures against empty, SRT-only and complete prior installations, terminated fresh publisher processes after the third rename and on both sides of commit, recovered twice and raced two writers. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (80 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P18 Recover interrupted subtitle publication under a destination lock`.
 
 ## Updating this ledger
 
