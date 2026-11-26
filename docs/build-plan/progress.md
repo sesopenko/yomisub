@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P11](tasks/P11.md).** 54 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P12](tasks/P12.md).** 59 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -15,7 +15,7 @@
 | P08 | 5 | Complete | Isolated AMD ROCm worker and setup checks |
 | P09 | 5 | Complete | Required diarization and activity measurements |
 | P10 | 5 | Complete | Contextual retries on the original mix |
-| P11 | 5 | Pending | Optional SepFormer listening and stem ASR |
+| P11 | 5 | Complete | Optional SepFormer listening and stem ASR |
 | P12 | 5 | Pending | Japanese surface alignment and grouping |
 | P13 | 8 | Pending | Candidate reconciliation and attribution |
 | P14 | 8 | Pending | Phrase onset, release and timed cuts |
@@ -167,6 +167,12 @@ Commit subject is `P09 Scan full recordings and measure simultaneous voice activ
 Added one contextual large-v3 retry per exact active-ID core and retained its own source, core link, padding-only segment IDs and any failure finding. The continuous transcript remains a separate application input. `test_refinement.py` passed three tests covering both edges, intersecting contexts, crowded cores, no overlap, failed retries and the two documented S01E10 window readings. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (54 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P10 Retain an original-mix retry for every overlap core`.
+
+### P11 — Keep optional local stems and their independent ASR evidence
+
+The opt-in S01E10 run used full large-v3 `ad82bf6a` for the contextual mix and both stem decodes. SepFormer WHAMR `9950fd80` ran on ROCm, with Whisper on Vulkan, both PCI `0000:0f:00.0`. Both native stems held 36184 frames at 8 kHz and both analysis copies held 72368 frames at 16 kHz. All four mapped to recording sample 387536 at 16 kHz (24.221 s). Output, three run IDs and audio are in `gitignored-inputs/evaluation/stem-smoke/`. Source columns carry no speaker assignment. Three focused `test_stems.py` tests, `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (57 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P11 Keep optional local stems and their independent ASR evidence`.
 
 ## Updating this ledger
 

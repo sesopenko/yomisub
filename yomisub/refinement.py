@@ -31,12 +31,13 @@ def link_transcript(transcript, source, core):
 
 
 class OverlapRefiner:
-    def __init__(self, placement, asr):
+    def __init__(self, placement, asr, stems=None):
+        self.stems = stems
         self.placement = placement
         self.asr = asr
 
     def refine(self, request, track, scan, work, progress):
-        files, transcripts, findings = [], [], []
+        files, transcripts, runs, findings = [], [], [], []
         for i, core in enumerate(overlap_cores(scan, track.clock)):
             key = f"mix-retry-{i}"
             window = core.interval
@@ -46,6 +47,10 @@ class OverlapRefiner:
                                     window.end + padding, track.clock, work / (key + ".wav"), key)
                 crop = AudioFile(replace(crop.source, core_id=core.id), crop.path)
                 files.append(crop)
+            except (OSError, ClockError) as error:
+                findings.append(ReviewFinding(key + "-failed", str(error), (core.id,), window))
+                continue
+            try:
                 progress(f"Checking overlap {i + 1} on the original mix...")
                 target = self.placement.resolve(Stage.RETRY_ASR)
                 self.asr.preflight("large-v3", target, progress)
@@ -53,4 +58,10 @@ class OverlapRefiner:
                 transcripts.append(link_transcript(decoded, crop.source, core))
             except (StageError, OSError, ClockError) as error:
                 findings.append(ReviewFinding(key + "-failed", str(error), (core.id,), window))
-        return Refinement(tuple(files), tuple(transcripts), findings=tuple(findings))
+            if request.analyze_stems and self.stems is not None:
+                extra = self.stems.refine_core(core, crop, request.stream.language, work, progress)
+                files.extend(extra.files)
+                transcripts.extend(extra.transcripts)
+                runs.extend(extra.runs)
+                findings.extend(extra.findings)
+        return Refinement(tuple(files), tuple(transcripts), tuple(runs), tuple(findings))

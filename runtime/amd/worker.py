@@ -77,7 +77,7 @@ def execute(request):
         raise WorkerError("runtime")
     if request["action"] == "devices":
         return {"devices": inventory, "versions": versions}
-    if request["stage"] not in ("diarization", "separation") or request["action"] not in ("probe", "scan"):
+    if request["stage"] not in ("diarization", "separation") or request["action"] not in ("probe", "scan", "separate"):
         raise WorkerError("protocol")
     chosen = [d for d in inventory if d["id"] == request["device"]]
     if len(chosen) != 1:
@@ -104,6 +104,36 @@ def execute(request):
         torch.cuda.synchronize(device)
         result.update(rttm=turns.to_rttm(), elapsed_seconds=monotonic() - started,
                       peak_allocated_bytes=torch.cuda.max_memory_allocated(device))
+    elif request["action"] == "separate":
+        if request["stage"] != "separation":
+            raise WorkerError("protocol")
+        import numpy as np
+        import soundfile as sf
+        from scipy.signal import resample_poly
+
+        signal, rate = sf.read(request["audio"], dtype="float32")
+        if signal.ndim != 1 or rate != 16000 or not 0 < len(signal) <= 16 * rate:
+            raise WorkerError("audio")
+        if model.hparams.sample_rate != 8000 or model.hparams.num_spks != 2:
+            raise WorkerError("weights")
+        narrow = resample_poly(signal, 1, 2)
+        torch.cuda.reset_peak_memory_stats(device)
+        started = monotonic()
+        with torch.inference_mode():
+            est = model.separate_batch(torch.from_numpy(narrow[None]).to(device))
+        torch.cuda.synchronize(device)
+        if est.device != device or est.shape != (1, len(narrow), 2):
+            raise WorkerError("runtime")
+        result.update(frames=len(narrow), analysis_frames=len(signal), elapsed_seconds=monotonic() - started,
+                      peak_allocated_bytes=torch.cuda.max_memory_allocated(device))
+        for column, stem in enumerate(est[0].cpu().numpy().T, 1):
+            if not np.isfinite(stem).all():
+                raise WorkerError("runtime")
+            root = Path(request["output"])
+            sf.write(root / f"stem-{column}.wav", stem, 8000, subtype="FLOAT")
+            wide = resample_poly(stem, 2, 1)[:len(signal)]
+            wide /= max(1, np.max(np.abs(wide)))
+            sf.write(root / f"stem-{column}-16k.wav", wide, 16000, subtype="PCM_16")
     return result
 
 

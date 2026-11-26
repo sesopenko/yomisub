@@ -117,7 +117,8 @@ class Scanner(Protocol):
 @dataclass(frozen=True)
 class Separation:
     run: ModelRun
-    stems: tuple[AudioFile, AudioFile]
+    stems: tuple[AudioFile, ...]
+    analysis: tuple[AudioFile, ...] = ()
 
 
 class Separator(Protocol):
