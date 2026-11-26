@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .domain import (
-    AudioSource, ListenerDecision, ModelRun, PlannedPhrase, RecordingClock,
+    AudioSource, ListenerDecision, ModelRun, PhraseCandidate, PlannedPhrase, RecordingClock,
     ReviewFinding, ScreenState, SelectedStream, TextSpan, TranscriptSegment, VoiceTurn,
 )
 
@@ -175,6 +175,7 @@ class CuePlan:
     phrases: tuple[PlannedPhrase, ...]
     states: tuple[ScreenState, ...]
     findings: tuple[ReviewFinding, ...]
+    candidates: tuple[PhraseCandidate, ...] = ()
 
 
 class Planner(Protocol):

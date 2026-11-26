@@ -192,12 +192,14 @@ class PlannedPhrase:
 class Lane:
     number: int
     phrase_id: str
+    label: str | None = None
 
 
 @dataclass(frozen=True)
 class ScreenState:
     interval: SampleInterval
     lanes: tuple[Lane, ...]
+    characters_per_second: Fraction = Fraction(0)
 
 
 @dataclass(frozen=True)

@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P15](tasks/P15.md).** 80 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P16](tasks/P16.md).** 85 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -19,7 +19,7 @@
 | P12 | 5 | Complete | Japanese surface alignment and grouping |
 | P13 | 8 | Complete | Candidate reconciliation and attribution |
 | P14 | 8 | Complete | Phrase onset, release and timed cuts |
-| P15 | 5 | Pending | Active phrases and stable speaker lanes |
+| P15 | 5 | Complete | Active phrases and stable speaker lanes |
 | P16 | 5 | Pending | SRT and ASS rendering |
 | P17 | 8 | Pending | Evidence bundle and offline replay |
 | P18 | 5 | Pending | Recoverable publication |
@@ -191,6 +191,12 @@ Commit subject is `P13 Reconcile overlap readings and provisional speaker owners
 Phrase spotting chooses each outer edge from a listener decision, a validated lexical edge, or the enclosing segment. It retains invalid raw evidence, preserves unsupported or disputed intervals for review, and checks ownership after changing boundaries. Five `test_spotting.py` tests cover cuts, phrase corrections, expansion and contraction, silence, short and long phrases, and end overrun. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (69 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P14 Spot independent phrase edges and recheck final owners`.
+
+### P15 — Lay out active phrases in stable speaker lanes
+
+The shared planner sweeps coincident events once, preserves continuing lanes, uses neutral labels for supported recording-local voices, and keeps a third phrase with a crowding finding. Two focused `test_layout.py` tests cover stable A/B entry and release, same-onset order, coincident changes, repeatability and exact combined reading demand (4 + 3 = 7 characters/s). `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (71 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P15 Lay out active phrases in stable speaker lanes`.
 
 ## Updating this ledger
 
