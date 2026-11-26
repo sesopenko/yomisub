@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+from time import monotonic
 from typing import Protocol
 from uuid import uuid4
 
@@ -84,10 +85,11 @@ class WhisperJSON:
         run_id = f"{target.stage}-{uuid4().hex}"
         output = work / run_id
         options = ("-l", language, "-bs", "5", "-bo", "5", "-ojf")
+        started = monotonic()
         self.runner.invoke(executable, ["-m", str(weights), "-f", str(audio.path), "-of", str(output),
                                         *options], target)
         run = ModelRun(run_id, audio.source.id, "whisper.cpp", build, f"{model}:sha1:{CHECKPOINTS[model]}",
-                       options, target.provider, target.physical_id)
+                       options, target.provider, target.physical_id, monotonic() - started)
         try:
             return parse_transcript(json.loads(output.with_suffix(".json").read_bytes()), run)
         except (OSError, KeyError, TypeError, ValueError) as error:

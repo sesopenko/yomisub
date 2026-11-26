@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P19](tasks/P19.md).** 103 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P20](tasks/P20.md).** 108 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -23,7 +23,7 @@
 | P16 | 5 | Complete | SRT and ASS rendering |
 | P17 | 8 | Complete | Evidence bundle and offline replay |
 | P18 | 5 | Complete | Recoverable publication |
-| P19 | 5 | Pending | Production generation workflow |
+| P19 | 5 | Complete | Production generation workflow |
 | P20 | 3 | Pending | GTK workflow and user documentation |
 | P21 | 8 | Pending | Paired accuracy and hardware acceptance |
 
@@ -215,6 +215,12 @@ Commit subject is `P17 Save relocatable evidence and replay listener corrections
 Three focused `test_publication.py` tests passed. They injected each of the three replacement failures against empty, SRT-only and complete prior installations, terminated fresh publisher processes after the third rename and on both sides of commit, recovered twice and raced two writers. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (80 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P18 Recover interrupted subtitle publication under a destination lock`.
+
+### P19 — Compose the production generation workflow and model providers
+
+Two `test_production.py` integration tests exercised the actual generation factory, planner, ZIP and publisher with controlled model operations. Repeated generation and optional retry failure retained the baseline on simulated single and split devices. Missing speaker setup stopped before audio and ASR. A scan crash removed temporary media and preserved the previous SRT. Whisper run records now measure model subprocess wall time. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (82 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P19 Compose the production generation workflow and model providers`.
 
 ## Updating this ledger
 
