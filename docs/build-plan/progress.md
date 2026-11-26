@@ -60,12 +60,18 @@ assert rows and rows == re.findall(r"^\| (P\d+) \| (\d+) \|", ledger.read_text()
 assert len({task for task, _ in rows}) == len(rows)
 assert all(int(points) in {1, 3, 5, 8} for _, points in rows)
 briefs = []
+prior_tasks = set()
 for task, path, points in index:
     assert path == f"tasks/{task}.md", (task, path)
     brief = root / path
     content = brief.read_text()
     assert content.startswith(f"# {task} — "), brief
     assert f"**Size:** {points}." in content, brief
+    prerequisite = re.search(r"\*\*Prerequisites?:\*\* (.+)", content)
+    assert prerequisite, brief
+    dependencies = set(re.findall(r"\bP\d+\b", prerequisite.group(1)))
+    assert dependencies <= prior_tasks and (task == "P00" or dependencies), brief
+    prior_tasks.add(task)
     assert all(f"\n## {section}\n" in content for section in ("Work", "Acceptance", "Sources")), brief
     briefs.append(brief)
 assert set(briefs) == set((root / "tasks").glob("*.md"))
@@ -88,6 +94,17 @@ for document in (plan, ledger, *briefs):
 print(f"{len(rows)} tasks, {sum(int(points) for _, points in rows)} points")
 PY
 ```
+
+### P00 update — Two adversarial reviews
+
+| Review | Scope | Findings applied |
+| --- | --- | --- |
+| Architect | Reviewed P00–P21, the plan, ledger and research. | Defined the handoff from provisional speaker attribution to final spotting, recording-clock conversions, optional versus required model binding, GTK cutover, and recovery of an SRT-only installation. Froze the phrase IDs and independent timing references used to judge accuracy. |
+| Implementer | Reviewed all 22 revised briefs in execution order against the checkout and research artifacts. | Moved acceptance checks to the task that can perform them. Specified clean-checkout inputs, model acquisition, the delayed-audio numeric example, offline corrections with changed text, publication retry order and named automatic release gates. |
+
+Both rounds were planning reviews. P01 is the next implementation task. The live accuracy gate requires independently verified speech-edge annotations. The research control placement data measures waveform overlap.
+
+Verification passed for all 22 task files, prerequisite order, point totals and source links. The TOML example parsed, the rational sample-clock example checked out, and the S01E10 coactivity interval matched the tracked RTTM. The lockfile check, all 18 unit tests and compilation passed. Commit subject is `P00 Resolve architect and implementer review findings`.
 
 ## Updating this ledger
 
