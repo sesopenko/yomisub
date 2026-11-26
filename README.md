@@ -106,3 +106,7 @@ The stages are `baseline_asr`, `retry_asr`, `diarization`, `separation`, and
 `stem_asr`. With no applicable preference, a sole compatible binding is selected.
 Multiple compatible bindings require an explicit choice. Runtime GPU ordinals
 are resolved separately by each provider when binding a stage.
+
+The AMD speaker worker has its own Python 3.12 environment. Follow the
+installation and model-access steps to check the diarizer on your selected
+GPU. [AMD worker setup](runtime/amd/README.md)

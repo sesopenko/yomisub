@@ -1,6 +1,6 @@
 # Subtitle build progress
 
-**Next task is [P08](tasks/P08.md).** 39 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P09](tasks/P09.md).** 44 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
@@ -12,7 +12,7 @@
 | P05 | 8 | Complete | Selected-track audio and recording clock |
 | P06 | 5 | Complete | AMD Vulkan device binding |
 | P07 | 5 | Complete | Continuous Whisper observations |
-| P08 | 5 | Pending | Isolated AMD ROCm worker and setup checks |
+| P08 | 5 | Complete | Isolated AMD ROCm worker and setup checks |
 | P09 | 5 | Pending | Required diarization and activity measurements |
 | P10 | 5 | Pending | Contextual retries on the original mix |
 | P11 | 5 | Pending | Optional SepFormer listening and stem ASR |
@@ -149,6 +149,12 @@ Commit subject is `P06 Bind and verify the physical AMD Vulkan device`.
 `test_asr.py` passed 3 tests for signed and missing piece times, exact or degraded text joins, decode-local points, one continuous input, and verified cache publication. Live full JSON on the complete 24-second serial control returned four segments on AMD Vulkan at `0000:0f:00.0`, medium SHA-1 `fd9727b6e1217c2f614f9b698455c4ffd82463b4`. The installed CLI reported 1.9.5-dev. `sha1sum gitignored-inputs/models/ggml-large-v3.bin` matched the research digest `ad82bf6a9043ceed055076d0fd39f5f186ff8062`. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (46 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P07 Capture continuous Whisper JSON with verified checkpoints`.
+
+### P08 — Provision and probe an isolated ROCm worker
+
+Provisioned a fresh Python 3.12.12 environment under `gitignored-inputs/evaluation/amd/venv` with the documented `uv pip install --no-deps ... -r runtime/amd/requirements.txt`. The local cache lacked the AMD Torch wheel, so the installation fetched the pinned build. The directory contained only the three verified diarization files. The JSON probe loaded both required models on PCI `0000:0f:00.0` using Torch 2.6.0+rocm6.4.2.git76481f7c, HIP 6.4.43484-123eb5128, and pyannote.audio 3.3.2. A separate optional probe identified the missing separator. The log is `gitignored-inputs/evaluation/amd/probe.log`. Two focused worker tests, Python 3.12 worker compilation, `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (48 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P08 Provision and probe an isolated ROCm worker`.
 
 ## Updating this ledger
 
