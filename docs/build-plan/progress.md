@@ -1,12 +1,12 @@
 # Subtitle build progress
 
-**Next task is [P02](tasks/P02.md).** 6 of 119 points complete. [Authoritative plan](plan.md)
+**Next task is [P03](tasks/P03.md).** 11 of 119 points complete. [Authoritative plan](plan.md)
 
 | ID | Points | Status | Work |
 | --- | ---: | --- | --- |
 | P00 | 1 | Complete | Capture the plan and initialize progress |
 | P01 | 5 | Complete | Domain values |
-| P02 | 5 | Pending | Application, model and compute contracts with fakes |
+| P02 | 5 | Complete | Application, model and compute contracts with fakes |
 | P03 | 5 | Pending | Provider registration and per-stage GPU placement |
 | P04 | 5 | Pending | Baseline fixtures and accuracy scoring |
 | P05 | 8 | Pending | Selected-track audio and recording clock |
@@ -111,6 +111,12 @@ Verification passed for all 22 task files, prerequisite order, point totals and 
 Added immutable recording and source clocks, raw observations, bounded intervals, editorial overlays and layout values. `uv run --locked python -m unittest discover -s tests -p test_domain.py` passed four tests including fractional resampling and invalid observation retention. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (22 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
 
 Commit subject is `P01 Model recording clocks and subtitle evidence`.
+
+### P02 — Define generation and replay contracts
+
+Application-owned ports and fake-driven generation/replay now share one planner and renderer. The shared binding, ASR and scanner assertions in `tests/adapter_contracts.py` also apply to P06, P07 and P09. A required scan failure stops publication and an optional failure preserves the baseline and distinct findings. `uv run --locked python -m unittest discover -s tests -p test_application.py` passed 5 tests. `uv lock --check`, `uv run --locked python -m unittest discover -s tests` (27 tests), and `uv run --locked python -m compileall -q yomisub.py yomisub tests` passed.
+
+Commit subject is `P02 Define generation and replay contracts`.
 
 ## Updating this ledger
 
